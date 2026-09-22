@@ -3,10 +3,12 @@ package com.ajayaventure.config;
 import com.ajayaventure.util.EnvVars;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import oracle.jdbc.OracleDriver;
 
 import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -57,7 +59,30 @@ public final class Database {
         }
     }
 
+    private static volatile boolean driverRegistered;
+
+    private static void registerDriver() {
+        if (driverRegistered) {
+            return;
+        }
+        synchronized (Database.class) {
+            if (driverRegistered) {
+                return;
+            }
+            try {
+                // Explicit registration: DriverManager's SPI scan can miss
+                // WEB-INF/lib drivers under a servlet container classloader.
+                DriverManager.registerDriver(new OracleDriver());
+                driverRegistered = true;
+            } catch (SQLException e) {
+                throw new IllegalStateException("Oracle JDBC driver registration failed", e);
+            }
+        }
+    }
+
     private static DataSource build() {
+        registerDriver();
+
         String host = EnvVars.get("DB_HOST", "localhost");
         int port = EnvVars.getInt("DB_PORT", 1521);
         String service = EnvVars.get("DB_SERVICE", "orclpdb");
@@ -68,6 +93,7 @@ public final class Database {
 
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(jdbcUrl);
+        config.setDriverClassName("oracle.jdbc.OracleDriver");
         config.setUsername(user);
         config.setPassword(password);
         config.setMaximumPoolSize(EnvVars.getInt("DB_POOL_MAX_SIZE", 10));

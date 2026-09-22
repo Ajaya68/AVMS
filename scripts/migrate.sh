@@ -69,14 +69,14 @@ for FILE in "${MIGRATION_DIR}"/V*__*.sql; do
   fi
 
   # record successful application
-  "${SQLPLUS}" -L -S "${MIG_CONN}" <<SQL > /tmp/av_migration_track.log 2>&1
+  if ! "${SQLPLUS}" -L -S "${MIG_CONN}" <<SQL > /tmp/av_migration_track.log 2>&1
 WHENEVER SQLERROR EXIT FAILURE
-INSERT INTO av_migration.av_schema_migration (version, filename, applied_by)
-VALUES ('${VERSION}', '${NAME}', USER);
+INSERT INTO av_migration.av_schema_migration (version, filename, applied_by, success)
+VALUES ('${VERSION}', '${NAME}', USER, 'Y');
 COMMIT;
 EXIT;
 SQL
-  if [[ $? -ne 0 ]]; then
+  then
     echo "TRACKING FAILED for ${NAME}"
     cat /tmp/av_migration_track.log
     exit 1

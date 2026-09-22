@@ -73,8 +73,8 @@ public final class EnvVars {
     }
 
     private static void loadDotEnv() {
-        Path envFile = Paths.get(".env");
-        if (!Files.exists(envFile)) {
+        Path envFile = findDotEnv();
+        if (envFile == null) {
             return;
         }
         try {
@@ -94,5 +94,23 @@ public final class EnvVars {
         } catch (IOException e) {
             System.err.println("[env] could not read .env file: " + e.getMessage());
         }
+    }
+
+    /**
+     * Looks for {@code .env} in the working directory, then walks up the
+     * directory tree (repo root), then the user home. Never reads committed
+     * sample files (only an exact {@code .env} name).
+     */
+    private static Path findDotEnv() {
+        Path cwd = Paths.get(".").toAbsolutePath().normalize();
+        for (Path dir = cwd; dir != null; dir = dir.getParent()) {
+            Path candidate = dir.resolve(".env");
+            if (Files.isRegularFile(candidate)) {
+                return candidate;
+            }
+        }
+        Path home = Paths.get(System.getProperty("user.home", "."));
+        Path homeCandidate = home.resolve(".env");
+        return Files.isRegularFile(homeCandidate) ? homeCandidate : null;
     }
 }

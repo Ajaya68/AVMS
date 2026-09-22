@@ -53,13 +53,14 @@ async function request(path, {
     }
   }
 
+  const scopedBusinessUnitId = businessUnitId !== undefined ? businessUnitId : activeBusinessUnitId;
   const headers = {};
   const isMutating = !['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase());
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
   }
-  if (businessUnitId) {
-    headers[BU_HEADER] = String(businessUnitId);
+  if (scopedBusinessUnitId) {
+    headers[BU_HEADER] = String(scopedBusinessUnitId);
   }
   const csrf = readCookie(CSRF_COOKIE);
   if (isMutating && csrf) {
@@ -113,5 +114,13 @@ const api = {
   patch: (path, body, opts) => request(path, { ...opts, method: 'PATCH', body }),
   del: (path, opts) => request(path, { ...opts, method: 'DELETE' }),
 };
+
+// Module-level active business unit, set by the UI selector. The backend still
+// re-verifies the value on every request.
+let activeBusinessUnitId = null;
+
+export function setActiveBusinessUnit(businessUnitId) {
+  activeBusinessUnitId = businessUnitId;
+}
 
 export default api;

@@ -30,15 +30,19 @@ public class HealthServlet extends HttpServlet {
         body.put("status", "UP");
         body.put("app", AppContextListener.APP_NAME);
         body.put("version", AppContextListener.APP_VERSION);
-        body.put("env", req.getServletContext().getAttribute("av.app.env"));
+        String env = (String) req.getServletContext().getAttribute("av.app.env");
+        body.put("env", env);
         body.put("requestId", com.ajayaventure.util.Responses.requestId(req));
 
         int status = 200;
         if (ready) {
-            boolean dbUp = isDatabaseUp();
-            body.put("ready", dbUp);
-            body.put("db", dbUp ? "UP" : "DOWN");
-            if (!dbUp) {
+            DbProbeResult db = probeDatabase();
+            body.put("ready", db.up);
+            body.put("db", db.up ? "UP" : "DOWN");
+            if ("development".equals(env)) {
+                body.put("db_detail", db.detail);
+            }
+            if (!db.up) {
                 status = 503;
             }
         }
@@ -48,17 +52,32 @@ public class HealthServlet extends HttpServlet {
         resp.getWriter().write(com.ajayaventure.util.Json.toApiJson(body));
     }
 
-    private boolean isDatabaseUp() {
+    private record DbProbeResult(boolean up, String detail) {
+    }
+
+    private DbProbeResult probeDatabase() {
         try {
             Connection connection = Database.getDataSource().getConnection();
             try (var st = connection.prepareStatement("SELECT 1 FROM DUAL");
                  var rs = st.executeQuery()) {
-                return rs.next();
+                boolean ok = rs.next();
+                return new DbProbeResult(ok, ok ? "select ok" : "no row");
             } finally {
                 connection.close();
             }
         } catch (Exception e) {
-            return false;
+            StringBuilder detail = new StringBuilder();
+            detail.append(e.getClass().getSimpleName());
+            Throwable t = e;
+            int depth = 0;
+            while (t != null && depth < 4) {
+                if (t.getMessage() != null && !t.getMessage().isBlank()) {
+                    detail.append(' ').append(t.getMessage());
+                }
+                t = t.getCause();
+                depth++;
+            }
+            return new DbProbeResult(false, detail.toString());
         }
     }
 }

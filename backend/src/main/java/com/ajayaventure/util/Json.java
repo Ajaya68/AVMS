@@ -18,30 +18,34 @@ public final class Json {
     public static final DateTimeFormatter DATETIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
     public static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-    public static final Gson GSON = new GsonBuilder()
+    public static final Gson GSON = baseBuilder()
             .setPrettyPrinting()
-            .serializeNulls()
-            .disableHtmlEscaping()
-            .registerTypeAdapter(LocalDateTime.class,
-                    (com.google.gson.JsonSerializer<LocalDateTime>) (src, type, ctx) ->
-                            src == null ? com.google.gson.JsonNull.INSTANCE
-                                    : new com.google.gson.JsonPrimitive(src.format(DATETIME_FMT)))
-            .registerTypeAdapter(LocalDateTime.class,
-                    (com.google.gson.JsonDeserializer<LocalDateTime>) (json, type, ctx) ->
-                            json.getAsJsonPrimitive().isString()
-                                    ? LocalDateTime.parse(json.getAsString(),
-                                    DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-                                    : null)
-            .registerTypeAdapter(LocalDate.class,
-                    (com.google.gson.JsonSerializer<LocalDate>) (src, type, ctx) ->
-                            src == null ? com.google.gson.JsonNull.INSTANCE
-                                    : new com.google.gson.JsonPrimitive(src.format(DATE_FMT)))
-            .registerTypeAdapter(LocalDate.class,
-                    (com.google.gson.JsonDeserializer<LocalDate>) (json, type, ctx) ->
-                            json.getAsJsonPrimitive().isString()
-                                    ? LocalDate.parse(json.getAsString(), DateTimeFormatter.ISO_LOCAL_DATE)
-                                    : null)
             .create();
+
+    private static GsonBuilder baseBuilder() {
+        return new GsonBuilder()
+                .serializeNulls()
+                .disableHtmlEscaping()
+                .registerTypeAdapter(LocalDateTime.class,
+                        (com.google.gson.JsonSerializer<LocalDateTime>) (src, type, ctx) ->
+                                src == null ? com.google.gson.JsonNull.INSTANCE
+                                        : new com.google.gson.JsonPrimitive(src.format(DATETIME_FMT)))
+                .registerTypeAdapter(LocalDateTime.class,
+                        (com.google.gson.JsonDeserializer<LocalDateTime>) (json, type, ctx) ->
+                                json.getAsJsonPrimitive().isString()
+                                        ? LocalDateTime.parse(json.getAsString(),
+                                        DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                                        : null)
+                .registerTypeAdapter(LocalDate.class,
+                        (com.google.gson.JsonSerializer<LocalDate>) (src, type, ctx) ->
+                                src == null ? com.google.gson.JsonNull.INSTANCE
+                                        : new com.google.gson.JsonPrimitive(src.format(DATE_FMT)))
+                .registerTypeAdapter(LocalDate.class,
+                        (com.google.gson.JsonDeserializer<LocalDate>) (json, type, ctx) ->
+                                json.getAsJsonPrimitive().isString()
+                                        ? LocalDate.parse(json.getAsString(), DateTimeFormatter.ISO_LOCAL_DATE)
+                                        : null);
+    }
 
     private Json() {
     }
@@ -50,10 +54,8 @@ public final class Json {
      * Serializes with field-name convention snake_case for API contracts.
      */
     public static String toApiJson(Object value) {
-        Gson apiGson = new GsonBuilder()
+        Gson apiGson = baseBuilder()
                 .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                .serializeNulls()
-                .disableHtmlEscaping()
                 .create();
         return apiGson.toJson(value);
     }
