@@ -1,0 +1,13 @@
+.git
+.gitignore
+.env
+**/.env
+node_modules
+frontend/dist
+frontend/node_modules
+backend/target
+tests
+docs
+*.md
+.DS_Store
+oradata

@@ -1,0 +1,15 @@
+# Backend runtime image: Maven build, Tomcat 11 plus Java 17 runtime (Jakarta EE 10).
+FROM maven:3.9-eclipse-temurin-17 AS build
+WORKDIR /build
+COPY pom.xml .
+COPY backend/pom.xml backend/pom.xml
+COPY backend/src backend/src
+RUN mvn -B -pl backend -am clean package -DskipTests
+
+FROM tomcat:11-jre17
+RUN rm -rf /usr/local/tomcat/webapps/*
+COPY --from=build /build/backend/target/ajaya-venture.war /usr/local/tomcat/webapps/ROOT.war
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s \
+    CMD bash -c 'exec 3<>/dev/tcp/localhost/8080 && echo "GET /api/v1/health HTTP/1.0" >&3 && grep -q "200" <&3' || exit 1
+USER 10001:10001

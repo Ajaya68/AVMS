@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0">
+
+    <display-name>AJAYA VENTURE Platform</display-name>
+
+    <filter>
+        <filter-name>requestIdFilter</filter-name>
+        <filter-class>com.ajayaventure.filter.RequestIdFilter</filter-class>
+    </filter>
+    <filter>
+        <filter-name>corsFilter</filter-name>
+        <filter-class>com.ajayaventure.filter.CorsFilter</filter-class>
+    </filter>
+    <filter>
+        <filter-name>securityHeadersFilter</filter-name>
+        <filter-class>com.ajayaventure.filter.SecurityHeadersFilter</filter-class>
+    </filter>
+    <filter>
+        <filter-name>csrfFilter</filter-name>
+        <filter-class>com.ajayaventure.filter.CsrfFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>requestIdFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>corsFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>securityHeadersFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>csrfFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <session-config>
+        <session-timeout>30</session-timeout>
+        <cookie-config>
+            <http-only>true</http-only>
+            <secure>false</secure>
+            <name>AV_SESSION</name>
+        </cookie-config>
+        <tracking-mode>COOKIE</tracking-mode>
+    </session-config>
+
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
+</web-app>

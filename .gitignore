@@ -1,0 +1,49 @@
+# Secrets / environment
+.env
+**/.env
+!.env.example
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+.factorypath
+target/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+*.local
+
+# Logs
+*.log
+logs/
+backend/logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reports / coverage
+coverage/
+*.exec
+*.ec
+
+# Maven / Java
+*.class
+*.jar
+!target/*.jar
+
+# Database artifacts
+*.dmp
+*.sql.gz
+oradata/
+
+# Temp
+temp/
+*.tmp
