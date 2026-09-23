@@ -74,15 +74,16 @@ Plus Django's standard `auth_group`, `auth_permission`, `django_admin_log`,
 - Codes for all masters come from `core_sequencecounter` (one row per
   module+venture, `SELECT ... FOR UPDATE` + `F()` increment).
 
-### Phase 5 - Inventory
-- `warehouses`: venture FK, warehouse_code, warehouse_name, address, city,
-  state, pincode, manager, status.
+### Phase 5 - Inventory (complete)
+- `warehouses`: warehouse_code (unique per venture), warehouse_name, address,
+  city, state, pincode, manager, status.
 - `inventory`: venture FK, warehouse FK, product FK, quantity, reserved_quantity,
-  reorder_level. Unique (warehouse, product).
-- `stock_movements`: venture FK, warehouse FK, product FK, movement_type
-  (PURCHASE | SALE | PURCHASE_RETURN | SALES_RETURN | ADJUSTMENT_IN |
-  ADJUSTMENT_OUT | TRANSFER_IN | TRANSFER_OUT), quantity, reference_type,
-  reference_id, movement_date, notes, created_by.
+  reorder_level; unique (warehouse, product); available = quantity - reserved.
+- `stock_movements`: venture FK, warehouse FK (source), destination_warehouse FK
+  (transfers), product FK, movement_type (PURCHASE | SALE | PURCHASE_RETURN |
+  SALES_RETURN | ADJUSTMENT_IN | ADJUSTMENT_OUT | TRANSFER_IN | TRANSFER_OUT),
+  quantity, movement_date, notes, reference_type/id, created_by, paired_movement
+  (transfer pairs).
 
 ### Phase 6 - Purchases
 - `purchases`: venture FK, supplier FK, invoice_number (unique per venture),

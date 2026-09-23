@@ -14,6 +14,9 @@ import SuppliersPage from "../pages/suppliers/SuppliersPage";
 import ProductsPage from "../pages/products/ProductsPage";
 import CategoriesPage from "../pages/products/CategoriesPage";
 import UnitsPage from "../pages/products/UnitsPage";
+import WarehousesPage from "../pages/inventory/WarehousesPage";
+import InventoryPage from "../pages/inventory/InventoryPage";
+import StockMovementsPage from "../pages/inventory/StockMovementsPage";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -34,9 +37,9 @@ const router = createBrowserRouter(
       <Route path="products" element={<ProductsPage />} />
       <Route path="categories" element={<CategoriesPage />} />
       <Route path="units" element={<UnitsPage />} />
-      <Route path="warehouses" element={<PlaceholderPage />} />
-      <Route path="inventory" element={<PlaceholderPage />} />
-      <Route path="stock-movements" element={<PlaceholderPage />} />
+      <Route path="warehouses" element={<WarehousesPage />} />
+      <Route path="inventory" element={<InventoryPage />} />
+      <Route path="stock-movements" element={<StockMovementsPage />} />
       <Route path="sales" element={<PlaceholderPage />} />
       <Route path="purchases" element={<PlaceholderPage />} />
       <Route path="sales-returns" element={<PlaceholderPage />} />

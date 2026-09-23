@@ -96,8 +96,9 @@ verified end-to-end before a phase ships.
 3. **Phase 3 - Venture** (complete): venture CRUD, auto `V-####` codes, audit-trailed, staff 403.
 4. **Phase 4 - Masters** (complete): customers, suppliers, categories, units, products;
    shared `core.crud_views` + `core.SequenceCounter` code generator; `X-Venture-Id` scoping.
-5. **Phase 5 - Inventory** (current): warehouses, stock, movements, low-stock alerts.
-6. **Phase 6 - Purchases**: purchases, purchase items, returns, balances.
+5. **Phase 5 - Inventory** (complete): warehouses, stock movements with
+   transactional application of deltas (+ transfers), low-stock view.
+6. **Phase 6 - Purchases** (current): purchases, purchase items, returns, balances.
 7. **Phase 7 - Sales**: sales, sale items, returns, balances, stock integration.
 8. **Phase 8 - Finance**: payments, expenses, receivables, payables.
 9. **Phase 9 - Employees**: basic employee management.

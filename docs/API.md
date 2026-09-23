@@ -124,10 +124,19 @@ authorization; the frontend only hides what the user cannot do.
   (`MasterListCreateView`/`MasterDetailView`) and the `core.SequenceCounter`
   code generator (`generate_code(module, venture, prefix)`).
 
-### Phase 5 - Inventory
-- `GET/POST /api/warehouses/`, `/api/warehouses/{id}/`
-- `GET /api/inventory/`
-- `GET/POST /api/stock-movements/`
+### Phase 5 - Inventory (complete)
+- `warehouses`: `GET/POST /api/warehouses/`, `/api/warehouses/{id}/` — auto
+  `W-####` per-venture codes.
+- `inventory`: `GET /api/inventory/` — stock on hand (quantity, reserved,
+  available, reorder_level, is_low), filters `?warehouse=`, `?product=`,
+  `?low=true`. Rows are created lazily and de-duplicated per (warehouse, product).
+- `stock-movements`: `GET/POST /api/stock-movements/`, `/api/stock-movements/{id}/`.
+  Types: PURCHASE, SALE, PURCHASE_RETURN, SALES_RETURN, ADJUSTMENT_IN,
+  ADJUSTMENT_OUT, TRANSFER_OUT. Outgoing types validate available stock
+  (`Insufficient stock` error); `TRANSFER_OUT` needs `destination_warehouse`
+  and auto-creates the paired `TRANSFER_IN`.
+- Auth: `warehouses.view/manage`, `inventory.view`, `stock_movements.view/manage`.
+  All reads honour `X-Venture-Id`. Movements are audited (CREATE).
 
 ### Phase 6 - Purchases
 - `GET/POST /api/purchases/`, `/api/purchases/{id}/`

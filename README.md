@@ -101,7 +101,18 @@ AVMS/
   pages; lint 0 warnings, build OK
 - Backend suite green (57 tests)
 
-Planned: Phase 5 (Inventory) -> Phase 6 (Purchases) -> ... per `docs/ARCHITECTURE.md`.
+### Phase 5 - Inventory (complete)
+- `inventory` app: warehouses (auto `W-####` codes), stock movements that
+  transactionally apply quantity deltas under row locks, transfer pairs
+  (OUT→IN), and an inventory view (on hand / reserved / available / low stock)
+- Movement types: PURCHASE, SALE, PURCHASE_RETURN, SALES_RETURN, ADJUSTMENT_IN,
+  ADJUSTMENT_OUT, TRANSFER_OUT; outgoing types enforce sufficient stock
+- `GET /api/inventory/?low=true` returns only low-stock lines
+- Frontend: Warehouses CRUD, Inventory table with warehouse + low-stock filters,
+  Stock Movements list + record-movement modal (transfer aware)
+- Backend suite green (67 tests)
+
+Planned: Phase 6 (Purchases) -> Phase 7 (Sales) -> ... per `docs/ARCHITECTURE.md`.
 
 ## Running the Project
 
