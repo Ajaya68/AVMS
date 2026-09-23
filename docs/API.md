@@ -195,11 +195,16 @@ authorization; the frontend only hides what the user cannot do.
 - Auto `EMP-####` codes per venture, for HR records, active/inactive status.
 - Auth: `employees.view` / `employees.manage`; reads venture-scoped and audited.
 
-### Phase 10 - Reports
-- `GET /api/reports/sales/`
-- `GET /api/reports/purchases/`
-- `GET /api/reports/inventory/`
-- `GET /api/reports/financial/`
+### Phase 10 - Reports (complete)
+- `GET /api/reports/sales/?from=&to=` - period summary (count, items sold,
+  gross/returned/net), top products, day-series.
+- `GET /api/reports/purchases/?from=&to=` - purchase summary, top suppliers,
+  day-series.
+- `GET /api/reports/inventory/` - per warehouse/product stock, valuation
+  (cost basis), stock totals, low-stock alerts.
+- `GET /api/reports/financial/?from=&to=` - revenue, COGS, expenses, gross
+  margin, net profit; outstanding receivables/payables; cash flow received/paid.
+- Auth: `reports.view`; always scoped by `X-Venture-Id`.
 
 ## HTTP Status Codes
 

@@ -151,9 +151,16 @@ AVMS/
   venture - department, designation, joining date, salary, active/inactive
   status; search + status filter, full CRUD with audit trail
 - Frontend: Employees master page (searchable, status badges, inline edit/delete)
-- Backend suite green (117 tests)
+### Phase 10 - Reports (complete)
+- `reports` app: period sales/purchases (summary + top products/suppliers +
+  day series), inventory stock/valuation + low-stock alerts, financials
+  (revenue, COGS, expenses, margin, profit, receivables, payables, cash flow)
+- All report endpoints are venture-scoped and gated by `reports.view`
+- Frontend: Reports hub with 4 tabs, date-range filters, summary cards,
+  lightweight CSS charts and low-stock alert panel
+- Backend suite green (123 tests)
 
-Planned: Phase 10 (Reports) -> Phase 11 (Audit & Notifications) -> ... per `docs/ARCHITECTURE.md`.
+Planned: Phase 11 (Audit & Notifications) -> Phase 12 (UI/UX) -> ... per `docs/ARCHITECTURE.md`.
 
 ## Running the Project
 

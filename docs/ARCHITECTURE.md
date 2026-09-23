@@ -107,8 +107,9 @@ verified end-to-end before a phase ships.
    with reversal, expenses with static categories.
 9. **Phase 9 - Employees** (complete): auto-coded employee HR records, active/
    inactive status.
-10. **Phase 10 - Reports** (current): sales/purchase/inventory/financial reports + charts.
-11. **Phase 11 - Audit & Notifications**: audit log, notifications.
+10. **Phase 10 - Reports** (complete): period sales/purchases with day series,
+    inventory with low-stock alerts, financials with outstanding and cash flow.
+11. **Phase 11 - Audit & Notifications** (current): audit log, notifications.
 12. **Phase 12 - UI/UX**: responsive polish, empty/error states, toasts.
 13. **Phase 13 - Testing**: end-to-end and regression fixes.
 14. **Phase 14 - Production**: hardening + deployment.
