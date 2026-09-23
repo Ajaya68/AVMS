@@ -20,7 +20,7 @@ application.
 AVMS/
 ├── backend/                 # Django REST API
 │   ├── config/              # settings, urls, wsgi/asgi, PyMySQL bootstrap
-│   ├── accounts/            # custom user model (roles/permissions in Phase 2)
+│   ├── accounts/            # users, roles, permissions, JWT auth
 │   ├── ventures/            # enterprise units (Phase 3)
 │   ├── customers/           # customers (Phase 4)
 │   ├── suppliers/           # suppliers (Phase 4)
@@ -56,17 +56,28 @@ AVMS/
 - Custom email-based `User` model (`accounts.User`), chosen now so the initial
   migrations are correct and the auth model never needs to be swapped later
 - MySQL 8 wired through environment variables (PyMySQL driver)
-- Initial migrations applied; Django checks pass; test suite green (13 tests)
+- Initial migrations applied; Django checks pass
 - Health endpoints (`/api/health/`, `/health/`) report service + database state
 - OpenAPI schema + Swagger UI served under `/api/schema/` and `/api/docs/`
-- React (Vite) shell with Bootstrap layout: sidebar, topbar, dashboard,
-  protected-route guard (feature-flagged off until Phase 2), centralized Axios
-  service with response unwrapping
-- Vite dev proxy routes `/api` to Django, so the browser never handles CORS in dev
+- React (Vite) shell with Bootstrap layout
 - `.env.example` templates and `.gitignore`
 - Dev credentials: superuser `admin@avms.local` / `Admin@12345`
 
-Planned: Phase 2 (Authentication) -> Phase 3 (Venture) -> ... per `docs/ARCHITECTURE.md`.
+**Phase 2 (Authentication) - COMPLETE**
+
+- Email + password JWT login; refresh (rotated) and logout (blacklisted) tokens
+- `Role` / `Permission` models with a capability matrix
+  (`module.view` / `module.manage`); six seeded roles: ADMIN, MANAGER,
+  ACCOUNTANT, SALES_STAFF, INVENTORY_STAFF, EMPLOYEE (`python manage.py seed_roles`)
+- Backend-enforced authorization via DRF permission classes; superusers bypass
+- Endpoints: login, refresh, logout, me, users (list/create/detail/patch), roles
+- Minimal `AuditLog` records LOGIN / LOGOUT / user administration events
+- React login page, real `AuthContext` with `/auth/me/` session hydration,
+  single-flight JWT refresh interceptor, permission-aware sidebar, Users and
+  Roles pages, protected routes enabled
+- Test suite green (29 tests: accounts roles/permissions + full auth API flow)
+
+Planned: Phase 3 (Venture) -> Phase 4 (Masters) -> ... per `docs/ARCHITECTURE.md`.
 
 ## Running the Project
 
@@ -97,8 +108,9 @@ mysql -u root -p -e "CREATE USER 'avms_user'@'localhost' IDENTIFIED BY 'your-pas
                      GRANT ALL PRIVILEGES ON avms.* TO 'avms_user'@'localhost'; \
                      GRANT ALL PRIVILEGES ON \`test_avms\`.* TO 'avms_user'@'localhost';"
 
-# Migrate and run
+# Migrate, seed roles and run
 python manage.py migrate
+python manage.py seed_roles
 python manage.py createsuperuser --email admin@avms.local
 python manage.py runserver 0.0.0.0:8000
 ```

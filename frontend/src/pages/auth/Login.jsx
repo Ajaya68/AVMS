@@ -1,6 +1,35 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Form } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+
+import { useAuth } from "../../context/AuthContext";
 
 function Login() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError("");
+    setSubmitting(true);
+    try {
+      await login(email, password);
+      navigate("/", { replace: true });
+    } catch (err) {
+      const detail =
+        err?.response?.data?.message ||
+        err?.response?.data?.detail ||
+        "Unable to sign in. Check your credentials and try again.";
+      setError(detail);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="auth-shell d-flex align-items-center justify-content-center">
       <div className="card shadow-sm auth-card">
@@ -12,13 +41,45 @@ function Login() {
               <small className="text-muted">Sign in to continue</small>
             </div>
           </div>
-          <div className="alert alert-info">
-            Authentication is implemented in <strong>Phase 2</strong>.
-            Use the Demo link below meanwhile.
-          </div>
-          <Link to="/" className="btn btn-primary w-100">
-            Continue to Dashboard
-          </Link>
+
+          {error && (
+            <div className="alert alert-danger py-2" role="alert">
+              {error}
+            </div>
+          )}
+
+          <Form onSubmit={handleSubmit}>
+            <Form.Group className="mb-3" controlId="login-email">
+              <Form.Label>Email address</Form.Label>
+              <Form.Control
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoFocus
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="login-password">
+              <Form.Label>Password</Form.Label>
+              <Form.Control
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </Form.Group>
+
+            <button
+              type="submit"
+              className="btn btn-primary w-100"
+              disabled={submitting}
+            >
+              {submitting ? "Signing in..." : "Sign in"}
+            </button>
+          </Form>
         </div>
       </div>
     </div>

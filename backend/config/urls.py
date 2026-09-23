@@ -24,5 +24,5 @@ urlpatterns = [
         name="swagger-ui",
     ),
     # Feature apps (wired in phase by phase)
-    # path("api/auth/", include("accounts.urls")),
+    path("api/auth/", include("accounts.urls")),
 ]

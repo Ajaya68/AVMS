@@ -19,9 +19,43 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// --- Refresh flow ---------------------------------------------------------
+// A single-flight refresh: when several requests fail with 401 at the same
+// time, only one /auth/refresh/ call is issued and the others wait on it.
+
+let refreshPromise = null;
+
+function refreshAccessToken() {
+  const refresh = localStorage.getItem("refresh_token");
+  if (!refresh) {
+    return Promise.reject(new Error("No refresh token available"));
+  }
+  if (!refreshPromise) {
+    refreshPromise = axios
+      .post(`${API_URL}/auth/refresh/`, { refresh })
+      .then((res) => {
+        const { access, refresh: newRefresh } = res.data;
+        localStorage.setItem("access_token", access);
+        if (newRefresh) {
+          localStorage.setItem("refresh_token", newRefresh);
+        }
+        return access;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+}
+
+function clearSession() {
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
+}
+
 // Normalize responses. The backend envelopes payloads as
 // { success, data, message } for success and { success, message, errors }
-// for failures.
+// for failures. SimpleJWT's raw refresh response is left untouched.
 api.interceptors.response.use(
   (response) => {
     const body = response.data;
@@ -30,15 +64,30 @@ api.interceptors.response.use(
     }
     return response.data;
   },
-  (error) => {
-    if (error.response?.status === 401) {
-      // Refresh handling is wired in during the authentication phase.
-      // For now, clear stale credentials so the UI can redirect to login.
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
+  async (error) => {
+    const original = error.config;
+    const isAuthUrl = original?.url?.includes("/auth/");
+    if (
+      error.response?.status === 401 &&
+      !isAuthUrl &&
+      original &&
+      !original._retried
+    ) {
+      original._retried = true;
+      try {
+        await refreshAccessToken();
+        return api(original);
+      } catch (refreshError) {
+        clearSession();
+        if (window.location.pathname !== "/login") {
+          window.location.assign("/login");
+        }
+        return Promise.reject(refreshError);
+      }
     }
     return Promise.reject(error);
   }
 );
 
+export { clearSession };
 export default api;

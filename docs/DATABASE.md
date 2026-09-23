@@ -10,10 +10,11 @@
   customers, etc.).
 - Every venture-scoped model carries a `venture_id` foreign key.
 
-## Current Schema (Phase 1)
+## Current Schema (Phases 1-2)
 
-Phase 1 models schema for the platform itself. Feature models are added in the
-phases listed below.
+The platform models below are implemented; Auth (Phase 2) added roles,
+permissions and the audit log. Feature models are added in the phases listed
+further down.
 
 ### accounts_user
 
@@ -32,11 +33,23 @@ phases listed below.
 | updated_at      | datetime      |                                |
 
 Custom `AUTH_USER_MODEL = accounts.User` since Phase 1 (see ARCHITECTURE).
-Roles / permissions (ADMIN, MANAGER, ACCOUNTANT, SALES_STAFF, INVENTORY_STAFF,
-EMPLOYEE) are added in Phase 2.
+
+### accounts_role / accounts_permission (Phase 2)
+
+- `accounts_role`: code (unique: ADMIN, MANAGER, ACCOUNTANT, SALES_STAFF,
+  INVENTORY_STAFF, EMPLOYEE), name, description, is_active, timestamps.
+- `accounts_permission`: code (unique, e.g. `customers.manage`), name, module.
+- `accounts_user_roles`: user FK + role FK (many-to-many).
+- `accounts_role_permissions`: role FK + permission FK (many-to-many).
+
+### audit_logs (Phase 2)
+
+- `audit_logs`: user FK (nullable), action (LOGIN/LOGOUT/CREATE/UPDATE/...),
+  module, object_type, object_id, ip_address, description, created_at.
 
 Plus Django's standard `auth_group`, `auth_permission`, `django_admin_log`,
-`django_content_type`, `django_migrations`, `django_session` tables.
+`django_content_type`, `django_migrations`, `django_session` and the
+`token_blacklist` tables (SimpleJWT).
 
 ## Planned Tables by Phase
 
@@ -94,8 +107,9 @@ Plus Django's standard `auth_group`, `auth_permission`, `django_admin_log`,
   department, designation, joining_date, salary, status.
 
 ### Phase 11 - Platform
-- `audit_logs`: user FK, action, module, object_type, object_id, timestamp, ip,
-  description.
+- `notifications`: user FK, message, type, read_at, created_at.
+- Audit log (`audit_logs`) already exists from Phase 2; Phase 11 adds the full
+  event surface for business modules and the notifications audience.
 - `notifications`: user FK, type, message, is_read, created_at.
 
 ## Key Constraints & Business Rules

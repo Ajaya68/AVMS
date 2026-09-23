@@ -5,6 +5,8 @@ import Dashboard from "../pages/dashboard/Dashboard";
 import Login from "../pages/auth/Login";
 import NotFound from "../pages/NotFound";
 import PlaceholderPage from "../pages/PlaceholderPage";
+import UsersPage from "../pages/users/UsersPage";
+import RolesPage from "../pages/roles/RolesPage";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -35,8 +37,8 @@ const router = createBrowserRouter(
       <Route path="expenses" element={<PlaceholderPage />} />
       <Route path="employees" element={<PlaceholderPage />} />
       <Route path="reports" element={<PlaceholderPage />} />
-      <Route path="users" element={<PlaceholderPage />} />
-      <Route path="roles" element={<PlaceholderPage />} />
+      <Route path="users" element={<UsersPage />} />
+      <Route path="roles" element={<RolesPage />} />
       <Route path="notifications" element={<PlaceholderPage />} />
       <Route path="audit-logs" element={<PlaceholderPage />} />
       <Route path="settings" element={<PlaceholderPage />} />

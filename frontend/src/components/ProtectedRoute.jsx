@@ -5,12 +5,8 @@ import LoadingSpinner from "./LoadingSpinner";
 /**
  * Client-side route guard. The backend independently verifies the JWT and
  * role permissions - this guard is only a UX convenience.
- *
- * Guarded behind a feature flag: authentication arrives in Phase 2, until
- * then the shell is freely navigable so that foundation work can be
- * verified end to end.
  */
-const AUTH_ENABLED = false;
+const AUTH_ENABLED = true;
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();

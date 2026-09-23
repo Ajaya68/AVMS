@@ -1,30 +1,70 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+
+import * as authService from "../services/authService";
 
 /**
  * Authentication state container.
  *
- * Phase 1 provides the shell only. The login/logout flows and JWT session
- * management are implemented in Phase 2. Components may consume the shape
- * below; until Phase 2 a user is always unauthenticated.
+ * On first mount the provider hydrates the session from the stored JWT via
+ * /auth/me/. The view layer gates routes and navigation with the auth state
+ * and the user's granted capability codes.
  */
 const AuthContext = createContext(null);
 
+const AUTH_ENABLED = true;
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [checked, setChecked] = useState(!AUTH_ENABLED);
 
-  const value = {
-    user,
-    loading: false,
-    isAuthenticated: Boolean(user),
-    login: async () => {
-      // Phase 2: call the auth API and set the authenticated user.
-    },
-    logout: () => {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-      setUser(null);
-    },
-  };
+  useEffect(() => {
+    if (!AUTH_ENABLED) {
+      return;
+    }
+    let cancelled = false;
+    Promise.resolve()
+      .then(() => authService.getAccessToken())
+      .then((access) => (access ? authService.fetchMe() : null))
+      .then((me) => {
+        if (!cancelled) setUser(me);
+      })
+      .catch(() => {
+        if (!cancelled) authService.logout();
+      })
+      .finally(() => {
+        if (!cancelled) setChecked(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const value = useMemo(() => {
+    const hasPerm = (code) => {
+      if (!AUTH_ENABLED) return true;
+      if (!user) return false;
+      if (user.is_superuser) return true;
+      return Array.isArray(user.permissions) && user.permissions.includes(code);
+    };
+    const loading = !checked;
+    return {
+      user,
+      loading,
+      isAuthenticated: !AUTH_ENABLED || Boolean(user),
+      hasPerm,
+      login: async (email, password) => {
+        const loggedInUser = await authService.login(email, password);
+        setUser(loggedInUser);
+        setChecked(true);
+        return loggedInUser;
+      },
+      logout: async () => {
+        await authService.logout();
+        setUser(null);
+        setChecked(true);
+      },
+    };
+  }, [user, checked]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

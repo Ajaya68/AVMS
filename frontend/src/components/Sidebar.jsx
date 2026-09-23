@@ -1,7 +1,15 @@
 import { NavLink } from "react-router-dom";
 import NAV from "../utils/navItems";
+import { useAuth } from "../context/AuthContext";
 
 function SidebarContent({ onNavigate }) {
+  const { hasPerm } = useAuth();
+
+  const visibleGroups = NAV.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => !item.perm || hasPerm(item.perm)),
+  })).filter((group) => group.items.length > 0);
+
   return (
     <div className="d-flex flex-column h-100">
       <div className="sidebar-brand d-flex align-items-center gap-2 px-3 py-3">
@@ -13,7 +21,7 @@ function SidebarContent({ onNavigate }) {
       </div>
 
       <nav className="flex-grow-1 overflow-auto px-2 pb-3">
-        {NAV.map((group, idx) => (
+        {visibleGroups.map((group, idx) => (
           <div key={group.section ?? `g${idx}`} className="mb-2">
             {group.section && (
               <div className="sidebar-section px-2 mt-3 mb-1">

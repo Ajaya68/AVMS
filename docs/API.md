@@ -5,7 +5,6 @@
 - Base path: `/api/`
 - Format: JSON
 - Auth: JWT Bearer tokens (`Authorization: Bearer <access>`)
-  - Implemented in Phase 2. Until then endpoints with no auth listed are public.
 - Response envelope (all endpoints):
   ```json
   { "success": true,  "data": {}, "message": "Operation successful" }
@@ -56,13 +55,49 @@ still running.
 | -------- | ----------------------------------- |
 | `/admin/`| Django admin (superuser required)   |
 
-## Endpoints Planned by Phase
+## Endpoints Implemented (Phase 2)
 
-### Phase 2 - Authentication
-- `POST /api/auth/login/`
-- `POST /api/auth/refresh/`
-- `POST /api/auth/logout/`
-- `GET  /api/auth/me/`
+### Authentication
+
+| Method | Path                  | Auth | Description                                   |
+| ------ | --------------------- | ---- | --------------------------------------------- |
+| POST   | `/api/auth/login/`    | No   | `{email, password}` -> `{access, refresh, user}` |
+| POST   | `/api/auth/refresh/`  | No   | `{refresh}` -> rotated `{access, refresh}`    |
+| POST   | `/api/auth/logout/`   | Yes  | `{refresh}`; blacklists the refresh token     |
+| GET    | `/api/auth/me/`       | Yes  | Current user profile, roles and capabilities  |
+
+`login` response `user` includes `role_codes` (active role codes), `roles`
+(detail incl. `permission_codes`) and `permissions` (all granted capability
+codes). Bad credentials return `401`.
+
+### Users & Roles (ADMIN only)
+
+| Method | Path                    | Permission     | Description                              |
+| ------ | ----------------------- | -------------- | ---------------------------------------- |
+| GET    | `/api/auth/users/`      | users.view     | Paginated list, `?search=` by name/email |
+| POST   | `/api/auth/users/`      | users.manage   | Create user (`email`, `password`, `full_name`, `phone`, `roles[]`) |
+| GET    | `/api/auth/users/{id}/` | users.manage   | User detail                              |
+| PATCH  | `/api/auth/users/{id}/` | users.manage   | Update `full_name`, `phone`, `is_active`, `roles[]` |
+| GET    | `/api/auth/roles/`      | roles.view     | All active roles with `permission_codes` |
+
+## Roles & Permissions
+
+Roles are seeded by `python manage.py seed_roles` (idempotent).
+
+| Role           | Summary                                                 |
+| -------------- | ------------------------------------------------------- |
+| ADMIN          | Everything, incl. users, roles, audit, settings         |
+| MANAGER        | Operations: customers, suppliers, products, inventory, sales, purchases, reports |
+| ACCOUNTANT     | Payments, expenses, sales/purchases view, reports       |
+| SALES_STAFF    | Customers and sales (create), payments view             |
+| INVENTORY_STAFF| Products, categories, warehouses, inventory, stock      |
+| EMPLOYEE       | Dashboard only                                          |
+
+Permission codes follow `module.view` (read) / `module.manage` (write).
+Superusers bypass all permission checks. The backend always enforces
+authorization; the frontend only hides what the user cannot do.
+
+## Endpoints Planned by Phase
 
 ### Phase 3 - Ventures
 - `GET/POST /api/ventures/`

@@ -1,29 +1,51 @@
-import api from "./api";
+import api, { clearSession } from "./api";
 
 /**
  * Authentication service.
  *
- * Wired to the backend in the Phase 2 authentication work. The function
- * signatures below are the intended contract so the rest of the UI can
- * already depend on them.
+ * All token storage lives here; the rest of the app talks to these
+ * functions and to the AuthContext.
  */
 
-export async function login(email, password) {
-  const response = await api.post("/auth/login/", { email, password });
-  return response; // { access, refresh, user }
+const ACCESS_KEY = "access_token";
+const REFRESH_KEY = "refresh_token";
+
+export function getAccessToken() {
+  return localStorage.getItem(ACCESS_KEY);
 }
 
-export async function refreshToken(refresh) {
-  return api.post("/auth/refresh/", { refresh });
+export function getRefreshToken() {
+  return localStorage.getItem(REFRESH_KEY);
 }
 
-export async function logout() {
-  try {
-    await api.post("/auth/logout/");
-  } finally {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+export function setTokens(access, refresh) {
+  localStorage.setItem(ACCESS_KEY, access);
+  if (refresh) {
+    localStorage.setItem(REFRESH_KEY, refresh);
   }
 }
 
-export default { login, refreshToken, logout };
+export async function login(email, password) {
+  const data = await api.post("/auth/login/", { email, password });
+  setTokens(data.access, data.refresh);
+  return data.user;
+}
+
+export async function logout() {
+  const refresh = getRefreshToken();
+  try {
+    if (refresh) {
+      await api.post("/auth/logout/", { refresh });
+    }
+  } catch {
+    // Token may already be invalid; local logout still proceeds.
+  } finally {
+    clearSession();
+  }
+}
+
+export async function fetchMe() {
+  return api.get("/auth/me/");
+}
+
+export default { login, logout, fetchMe, getAccessToken, getRefreshToken, setTokens };
