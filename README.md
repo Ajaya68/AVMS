@@ -77,7 +77,18 @@ AVMS/
   Roles pages, protected routes enabled
 - Test suite green (29 tests: accounts roles/permissions + full auth API flow)
 
-Planned: Phase 3 (Venture) -> Phase 4 (Masters) -> ... per `docs/ARCHITECTURE.md`.
+### Phase 3 - Ventures (complete)
+- `ventures` app: venture CRUD at `/api/ventures/` with auto `V-####` codes,
+  business type + status, blanket `ventures.view`/`ventures.manage` permissions
+- Serialized code generator (`VentureCodeCounter`) — DB-counter based (test-safe)
+- Venture-scoping helpers (`get_request_venture`, `scope_queryset_by_venture`)
+  ready for customer/supplier/product phases
+- Frontend: Ventures list (search), detail page, create/edit modal, activate/
+  deactivate + delete (write actions hidden without `ventures.manage`)
+- Every venture create/update/delete writes an `AuditLog`
+- Backend suite green (42 tests), lint 0 warnings, build OK
+
+Planned: Phase 4 (Masters) -> Phase 5 (Inventory) -> ... per `docs/ARCHITECTURE.md`.
 
 ## Running the Project
 

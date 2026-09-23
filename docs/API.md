@@ -100,8 +100,11 @@ authorization; the frontend only hides what the user cannot do.
 ## Endpoints Planned by Phase
 
 ### Phase 3 - Ventures
-- `GET/POST /api/ventures/`
-- `GET/PUT/PATCH/DELETE /api/ventures/{id}/`
+- `GET /api/ventures/` — list (search by name/code/city via `?search=`), `POST` create.
+- `GET /api/ventures/{id}/`, `PUT/PATCH/DELETE /api/ventures/{id}/`.
+- Auth: `ventures.view` (read), `ventures.manage` (write). Code auto-generated (`V-0001`…) via serialized counter; read-only.
+- Fields: venture_name, business_type (MUSHROOM | FISH_FARMING | AGRICULTURE | POULTRY | DAIRY | GENERAL | OTHER), status (ACTIVE | INACTIVE), phone, email, address, city, state, pincode, description.
+- Every create/update/delete writes an `AuditLog` (action CREATE/UPDATE/DELETE, entity_type `Venture`).
 
 ### Phase 4 - Masters
 - `GET/POST /api/customers/`, `/api/customers/{id}/`

@@ -53,9 +53,12 @@ Plus Django's standard `auth_group`, `auth_permission`, `django_admin_log`,
 
 ## Planned Tables by Phase
 
-### Phase 3 - ventures
+### Phase 3 - ventures (complete)
 - `ventures`: venture_code (unique), venture_name, description, business_type,
   phone, email, address, city, state, pincode, status, timestamps.
+- `ventures_venturecodecounter`: single-row counter (code sequence) — codes use
+  `SELECT ... FOR UPDATE` + `F()` increment; counter row persists across deletes so
+  codes never repeat (independent of MySQL auto-increment gaps in tests).
 
 ### Phase 4 - Masters
 - `customers`: venture FK, customer_code, name, phone, email, address, city,

@@ -7,6 +7,8 @@ import NotFound from "../pages/NotFound";
 import PlaceholderPage from "../pages/PlaceholderPage";
 import UsersPage from "../pages/users/UsersPage";
 import RolesPage from "../pages/roles/RolesPage";
+import VenturesPage from "../pages/ventures/VenturesPage";
+import VentureDetailPage from "../pages/ventures/VentureDetailPage";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -20,7 +22,8 @@ const router = createBrowserRouter(
         }
       >
       <Route index element={<Dashboard />} />
-      <Route path="ventures" element={<PlaceholderPage />} />
+      <Route path="ventures" element={<VenturesPage />} />
+      <Route path="ventures/:id" element={<VentureDetailPage />} />
       <Route path="customers" element={<PlaceholderPage />} />
       <Route path="suppliers" element={<PlaceholderPage />} />
       <Route path="products" element={<PlaceholderPage />} />

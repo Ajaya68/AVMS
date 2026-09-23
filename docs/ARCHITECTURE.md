@@ -93,8 +93,8 @@ verified end-to-end before a phase ships.
 
 1. **Phase 1 - Foundation** (complete): Django + React scaffolds, MySQL, env, health.
 2. **Phase 2 - Authentication** (complete): JWT login/logout, roles, permissions, protected routes.
-3. **Phase 3 - Venture** (current): venture CRUD + venture-based data isolation.
-4. **Phase 4 - Masters**: customers, suppliers, categories, units, products.
+3. **Phase 3 - Venture** (complete): venture CRUD, auto `V-####` codes, audit-trailed, staff 403.
+4. **Phase 4 - Masters** (current): customers, suppliers, categories, units, products.
 5. **Phase 5 - Inventory**: warehouses, stock, movements, low-stock alerts.
 6. **Phase 6 - Purchases**: purchases, purchase items, returns, balances.
 7. **Phase 7 - Sales**: sales, sale items, returns, balances, stock integration.
