@@ -23,6 +23,7 @@ import SalesPage from "../pages/sales/SalesPage";
 import SaleReturnsPage from "../pages/sales/SaleReturnsPage";
 import PaymentsPage from "../pages/payments/PaymentsPage";
 import ExpensesPage from "../pages/expenses/ExpensesPage";
+import EmployeesPage from "../pages/employees/EmployeesPage";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -52,7 +53,7 @@ const router = createBrowserRouter(
       <Route path="purchase-returns" element={<PurchaseReturnsPage />} />
       <Route path="payments" element={<PaymentsPage />} />
       <Route path="expenses" element={<ExpensesPage />} />
-      <Route path="employees" element={<PlaceholderPage />} />
+      <Route path="employees" element={<EmployeesPage />} />
       <Route path="reports" element={<PlaceholderPage />} />
       <Route path="users" element={<UsersPage />} />
       <Route path="roles" element={<RolesPage />} />

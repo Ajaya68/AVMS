@@ -125,9 +125,10 @@ Plus Django's standard `auth_group`, `auth_permission`, `django_admin_log`,
 - `expenses`: venture FK, category FK, amount, expense_date, payment_method,
   description, created_by.
 
-### Phase 9 - Employees
-- `employees`: venture FK, employee_code, first_name, last_name, phone, email,
-  department, designation, joining_date, salary, status.
+### Phase 9 - Employees (complete)
+- `employees`: venture FK, employee_code (auto `EMP-####`, unique per venture),
+  first_name, last_name, phone, email, department, designation, joining_date,
+  salary, status (ACTIVE | INACTIVE).
 
 ### Phase 11 - Platform
 - `notifications`: user FK, message, type, read_at, created_at.

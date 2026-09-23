@@ -146,9 +146,14 @@ AVMS/
 - Frontend: Payments (list w/ type filter, record-payment modal that picks
   open sale/purchase references and caps the amount, one-click reversal),
   Expenses (list/search/category filter, inline delete, totals)
-- Backend suite green (111 tests)
+### Phase 9 - Employees (complete)
+- `employees` app: auto-coded (`EMP-####`) HR records scoped to the owning
+  venture - department, designation, joining date, salary, active/inactive
+  status; search + status filter, full CRUD with audit trail
+- Frontend: Employees master page (searchable, status badges, inline edit/delete)
+- Backend suite green (117 tests)
 
-Planned: Phase 9 (Employees) -> Phase 10 (Reports) -> ... per `docs/ARCHITECTURE.md`.
+Planned: Phase 10 (Reports) -> Phase 11 (Audit & Notifications) -> ... per `docs/ARCHITECTURE.md`.
 
 ## Running the Project
 

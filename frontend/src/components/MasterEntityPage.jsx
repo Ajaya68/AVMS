@@ -110,6 +110,8 @@ const options = isVenture
                         ? "number"
                         : field.type === "email"
                         ? "email"
+                        : field.type === "date"
+                        ? "date"
                         : "text"
                     }
                     rows={isTextarea ? 2 : undefined}

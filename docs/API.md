@@ -189,8 +189,11 @@ authorization; the frontend only hides what the user cannot do.
   `X-Venture-Id`; payments/expenses are audited (payments also AUDIT DELETE
   on reversal).
 
-### Phase 9 - Employees
-- `GET/POST /api/employees/`, `/api/employees/{id}/`
+### Phase 9 - Employees (complete)
+- `GET/POST /api/employees/` (search: code/name/email/department/designation,
+  `?status=`), `GET/PATCH/DELETE /api/employees/{id}/`.
+- Auto `EMP-####` codes per venture, for HR records, active/inactive status.
+- Auth: `employees.view` / `employees.manage`; reads venture-scoped and audited.
 
 ### Phase 10 - Reports
 - `GET /api/reports/sales/`

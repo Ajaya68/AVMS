@@ -105,8 +105,9 @@ verified end-to-end before a phase ships.
    settling balances.
 8. **Phase 8 - Finance** (complete): payments settling sale/purchase balances
    with reversal, expenses with static categories.
-9. **Phase 9 - Employees** (current): employees, HR records, roles by venture.
-10. **Phase 10 - Reports**: sales/purchase/inventory/financial reports + charts.
+9. **Phase 9 - Employees** (complete): auto-coded employee HR records, active/
+   inactive status.
+10. **Phase 10 - Reports** (current): sales/purchase/inventory/financial reports + charts.
 11. **Phase 11 - Audit & Notifications**: audit log, notifications.
 12. **Phase 12 - UI/UX**: responsive polish, empty/error states, toasts.
 13. **Phase 13 - Testing**: end-to-end and regression fixes.
