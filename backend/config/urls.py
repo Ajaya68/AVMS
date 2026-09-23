@@ -25,6 +25,8 @@ urlpatterns = [
     ),
     # Feature apps (wired in phase by phase)
     path("api/auth/", include("accounts.urls")),
+    path("api/", include("audit.urls")),
+    path("api/notifications/", include("notifications.urls")),
     path("api/ventures/", include("ventures.urls")),
     path("api/customers/", include("customers.urls")),
     path("api/suppliers/", include("suppliers.urls")),

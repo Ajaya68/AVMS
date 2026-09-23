@@ -10,6 +10,9 @@ from decimal import Decimal
 
 from django.db import transaction
 
+from notifications.models import Notification
+from notifications.services import notify_venture_users
+
 from .models import Inventory, StockMovement
 
 
@@ -33,7 +36,7 @@ def _inventory_row(warehouse, product, *, lock=False):
         or Inventory(venture=product.venture, warehouse=warehouse, product=product)
     )
     if not inventory.pk:
-        inventory.reorder_level = product.reorder_level
+        inventory.reorder_level = Decimal(str(product.reorder_level))
     return inventory
 
 
@@ -44,6 +47,20 @@ def _decrement(inventory, amount):
             available=inventory.quantity, requested=amount,
         )
     inventory.quantity -= amount
+
+
+def _alert_low_stock(row):
+    """Notify inventory managers when a row drops to/below its reorder level."""
+    available = Decimal(str(row.available))
+    reorder = Decimal(str(row.reorder_level or 0))
+    if available <= reorder:
+        notify_venture_users(
+            row.venture,
+            Notification.TYPE_LOW_STOCK,
+            f"Low stock: {row.product.sku} {row.product.product_name} "
+            f"in {row.warehouse.warehouse_name} (available {available})",
+            perm_code="inventory.manage",
+        )
 
 
 def record_stock_movement(
@@ -114,11 +131,13 @@ def record_stock_movement(
             _decrement(warehouse_row, amount)
             warehouse_row.reorder_level = product.reorder_level
             warehouse_row.save()
+            _alert_low_stock(warehouse_row)
 
             destination_row = _inventory_row(destination_warehouse, product, lock=True)
             destination_row.quantity += amount
             destination_row.reorder_level = product.reorder_level
             destination_row.save()
+            _alert_low_stock(destination_row)
 
             paired = StockMovement(
                 venture=venture,
@@ -146,6 +165,7 @@ def record_stock_movement(
                 row.quantity += amount
             row.reorder_level = product.reorder_level
             row.save()
+            _alert_low_stock(row)
 
         movement.refresh_from_db()
         return movement, paired

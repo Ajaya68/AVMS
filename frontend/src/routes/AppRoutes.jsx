@@ -25,6 +25,8 @@ import PaymentsPage from "../pages/payments/PaymentsPage";
 import ExpensesPage from "../pages/expenses/ExpensesPage";
 import EmployeesPage from "../pages/employees/EmployeesPage";
 import ReportsPage from "../pages/reports/ReportsPage";
+import NotificationsPage from "../pages/notifications/NotificationsPage";
+import AuditLogsPage from "../pages/audit/AuditLogsPage";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -58,8 +60,8 @@ const router = createBrowserRouter(
       <Route path="reports" element={<ReportsPage />} />
       <Route path="users" element={<UsersPage />} />
       <Route path="roles" element={<RolesPage />} />
-      <Route path="notifications" element={<PlaceholderPage />} />
-      <Route path="audit-logs" element={<PlaceholderPage />} />
+      <Route path="notifications" element={<NotificationsPage />} />
+      <Route path="audit-logs" element={<AuditLogsPage />} />
       <Route path="settings" element={<PlaceholderPage />} />
       </Route>
       <Route path="*" element={<NotFound />} />

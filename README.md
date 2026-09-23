@@ -158,9 +158,16 @@ AVMS/
 - All report endpoints are venture-scoped and gated by `reports.view`
 - Frontend: Reports hub with 4 tabs, date-range filters, summary cards,
   lightweight CSS charts and low-stock alert panel
-- Backend suite green (123 tests)
+### Phase 11 - Audit & Notifications (complete)
+- `notifications` app: per-user inbox; auto-fires LOW_STOCK, SALE_CREATED,
+  PURCHASE_CREATED, PAYMENT_RECEIVED/PAID alerts to superusers and the relevant
+  managers whenever stock/bills/payments are recorded
+- `audit` read API: paginated, filterable audit trail behind `audit.view`
+- Frontend: Notifications page (unread badge, mark read / mark all) and
+  Audit Logs page (filters: module, action, date range, search + pagination)
+- Backend suite green (129 tests)
 
-Planned: Phase 11 (Audit & Notifications) -> Phase 12 (UI/UX) -> ... per `docs/ARCHITECTURE.md`.
+Planned: Phase 12 (UI/UX) -> Phase 13 (Testing) -> ... per `docs/ARCHITECTURE.md`.
 
 ## Running the Project
 

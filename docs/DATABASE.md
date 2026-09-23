@@ -130,11 +130,12 @@ Plus Django's standard `auth_group`, `auth_permission`, `django_admin_log`,
   first_name, last_name, phone, email, department, designation, joining_date,
   salary, status (ACTIVE | INACTIVE).
 
-### Phase 11 - Platform
-- `notifications`: user FK, message, type, read_at, created_at.
-- Audit log (`audit_logs`) already exists from Phase 2; Phase 11 adds the full
-  event surface for business modules and the notifications audience.
-- `notifications`: user FK, type, message, is_read, created_at.
+### Phase 11 - Audit & Notifications (complete)
+- `notifications`: user FK, type (LOW_STOCK | SALE_CREATED | PURCHASE_CREATED |
+  PAYMENT_RECEIVED | PAYMENT_PAID | SYSTEM), message, link, is_read, created_at.
+- Audit log (`audit_logs`) exists since Phase 2; Phase 11 exposes it as a
+  filterable read API (`GET /api/audit-logs/`) and adds the full event surface
+  for business modules plus auto-notifications for stock/bill/payment events.
 
 ## Key Constraints & Business Rules
 

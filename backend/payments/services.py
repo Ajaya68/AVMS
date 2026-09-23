@@ -7,6 +7,8 @@ payment can be reversed on delete.
 
 from django.db import transaction
 
+from notifications.models import Notification
+from notifications.services import notify_venture_users
 from purchases.models import Purchase
 from sales.models import Sale
 
@@ -30,6 +32,23 @@ def _resolve_bill(payment):
     return bill
 
 
+def _notify(payment):
+    if payment.payment_type == Payment.TYPE_RECEIVED:
+        notify_venture_users(
+            payment.venture,
+            Notification.TYPE_PAYMENT_RECEIVED,
+            f"Payment received of {payment.amount} against SALE #{payment.reference_id}",
+            perm_code="payments.manage",
+        )
+    else:
+        notify_venture_users(
+            payment.venture,
+            Notification.TYPE_PAYMENT_PAID,
+            f"Payment made of {payment.amount} against PURCHASE #{payment.reference_id}",
+            perm_code="payments.manage",
+        )
+
+
 def apply_payment(payment):
     with transaction.atomic():
         bill = _resolve_bill(payment)
@@ -46,6 +65,7 @@ def apply_payment(payment):
         bill.save(update_fields=["paid_amount", "due_amount"])
         # keep payment_amount consistent with what was actually applied
         payment.amount = amount
+        _notify(payment)
 
 
 def reverse_payment(payment):

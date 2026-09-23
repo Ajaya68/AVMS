@@ -109,8 +109,9 @@ verified end-to-end before a phase ships.
    inactive status.
 10. **Phase 10 - Reports** (complete): period sales/purchases with day series,
     inventory with low-stock alerts, financials with outstanding and cash flow.
-11. **Phase 11 - Audit & Notifications** (current): audit log, notifications.
-12. **Phase 12 - UI/UX**: responsive polish, empty/error states, toasts.
+11. **Phase 11 - Audit & Notifications** (complete): filterable audit trail API,
+    per-user notifications auto-fired on stock/bill/payment events.
+12. **Phase 12 - UI/UX** (current): responsive polish, empty/error states, toasts.
 13. **Phase 13 - Testing**: end-to-end and regression fixes.
 14. **Phase 14 - Production**: hardening + deployment.
 

@@ -11,6 +11,8 @@ from django.db import transaction
 from django.db.models import Sum
 
 from inventory.services import InsufficientStockError, record_stock_movement
+from notifications.models import Notification
+from notifications.services import notify_venture_users
 
 from .models import Purchase, PurchaseReturn, money2
 
@@ -39,6 +41,12 @@ def finalize_purchase(request, purchase, warehouse, items):
                 "warehouse", "subtotal", "discount", "tax",
                 "total_amount", "paid_amount", "returned_amount", "due_amount",
             ]
+        )
+        notify_venture_users(
+            purchase.venture,
+            Notification.TYPE_PURCHASE_CREATED,
+            f"New purchase {purchase.invoice_number} recorded for {purchase.total_amount}",
+            perm_code="purchases.manage",
         )
 
 

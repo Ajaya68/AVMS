@@ -206,6 +206,18 @@ authorization; the frontend only hides what the user cannot do.
   margin, net profit; outstanding receivables/payables; cash flow received/paid.
 - Auth: `reports.view`; always scoped by `X-Venture-Id`.
 
+### Phase 11 - Audit & Notifications (complete)
+- `GET /api/audit-logs/` - paginated, filterable trail (`module`, `action`,
+  `object_id`, `from`, `to`, `search`).
+- `GET /api/notifications/` - own notifications (`?unread_first=true`),
+  `GET /api/notifications/unread-count/`,
+  `POST /api/notifications/{id}/read/`, `POST /api/notifications/read-all/`.
+- Auto-notifications on business events: LOW_STOCK (row at/below reorder
+  level), SALE_CREATED, PURCHASE_CREATED, PAYMENT_RECEIVED, PAYMENT_PAID.
+  Recipients: superusers + holders of the relevant manage permission.
+- Auth: `notifications.view` (users only ever see their own),
+  `audit.view`.
+
 ## HTTP Status Codes
 
 | Code | Meaning                                          |

@@ -11,6 +11,8 @@ from django.db import transaction
 from django.db.models import Sum
 
 from inventory.services import InsufficientStockError, record_stock_movement
+from notifications.models import Notification
+from notifications.services import notify_venture_users
 
 from .models import Sale, SaleReturn, money2
 
@@ -48,6 +50,12 @@ def finalize_sale(request, sale, warehouse, items):
                 "warehouse", "subtotal", "discount", "tax",
                 "total_amount", "paid_amount", "returned_amount", "due_amount",
             ]
+        )
+        notify_venture_users(
+            sale.venture,
+            Notification.TYPE_SALE_CREATED,
+            f"New sale {sale.invoice_number} recorded for {sale.total_amount}",
+            perm_code="sales.manage",
         )
 
 
