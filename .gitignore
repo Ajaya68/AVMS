@@ -1,49 +1,32 @@
-# Secrets / environment
+# Python / Django
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+staticfiles/
+media/
+db.sqlite3
+
+# Environment
 .env
-**/.env
+.env.*
 !.env.example
 
-# IDE
-.idea/
-*.iml
-.vscode/
-.settings/
-.classpath
-.project
-.factorypath
-target/
-
-# Node
+# Node / React
 node_modules/
-frontend/dist/
-frontend/build/
-frontend/.vite/
-*.local
+dist/
+build/
+.vite/
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
 
 # Logs
 *.log
 logs/
-backend/logs/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Reports / coverage
-coverage/
-*.exec
-*.ec
-
-# Maven / Java
-*.class
-*.jar
-!target/*.jar
-
-# Database artifacts
-*.dmp
-*.sql.gz
-oradata/
-
-# Temp
-temp/
-*.tmp

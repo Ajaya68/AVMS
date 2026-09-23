@@ -1,0 +1,121 @@
+# AVMS Database Design
+
+## Overview
+
+- Engine: MySQL 8.0 (`utf8mb4`).
+- Managed exclusively through Django ORM + migrations (`makemigrations`/`migrate`).
+- Every business record carries `created_at` / `updated_at`.
+- Soft deletion (`is_deleted` + `deleted_at`) is available via the shared base
+  models in `core/models.py` for records that must be preserved (products,
+  customers, etc.).
+- Every venture-scoped model carries a `venture_id` foreign key.
+
+## Current Schema (Phase 1)
+
+Phase 1 models schema for the platform itself. Feature models are added in the
+phases listed below.
+
+### accounts_user
+
+| Column          | Type          | Notes                          |
+| --------------- | ------------- | ------------------------------ |
+| id              | bigint PK     |                                |
+| email           | varchar(254)  | unique, USERNAME_FIELD         |
+| password        | varchar(128)  | hashed                         |
+| full_name       | varchar(255)  |                                |
+| phone           | varchar(20)   |                                |
+| is_active       | bool          |                                |
+| is_staff        | bool          |                                |
+| is_superuser    | bool          |                                |
+| last_login      | datetime      |                                |
+| created_at      | datetime      |                                |
+| updated_at      | datetime      |                                |
+
+Custom `AUTH_USER_MODEL = accounts.User` since Phase 1 (see ARCHITECTURE).
+Roles / permissions (ADMIN, MANAGER, ACCOUNTANT, SALES_STAFF, INVENTORY_STAFF,
+EMPLOYEE) are added in Phase 2.
+
+Plus Django's standard `auth_group`, `auth_permission`, `django_admin_log`,
+`django_content_type`, `django_migrations`, `django_session` tables.
+
+## Planned Tables by Phase
+
+### Phase 3 - ventures
+- `ventures`: venture_code (unique), venture_name, description, business_type,
+  phone, email, address, city, state, pincode, status, timestamps.
+
+### Phase 4 - Masters
+- `customers`: venture FK, customer_code, name, phone, email, address, city,
+  state, pincode, gst_number, credit_limit, status.
+- `suppliers`: venture FK, supplier_code, name, contact_person, phone, email,
+  address, city, state, pincode, gst_number, payment_terms, status.
+- `categories`: venture FK, category_name, description, status.
+- `units`: static short codes (kg, g, pcs, packet, litre, box).
+- `products`: venture FK, category FK, unit FK, sku (unique per venture),
+  product_name, description, purchase_price, selling_price, tax_rate,
+  reorder_level, status.
+
+### Phase 5 - Inventory
+- `warehouses`: venture FK, warehouse_code, warehouse_name, address, city,
+  state, pincode, manager, status.
+- `inventory`: venture FK, warehouse FK, product FK, quantity, reserved_quantity,
+  reorder_level. Unique (warehouse, product).
+- `stock_movements`: venture FK, warehouse FK, product FK, movement_type
+  (PURCHASE | SALE | PURCHASE_RETURN | SALES_RETURN | ADJUSTMENT_IN |
+  ADJUSTMENT_OUT | TRANSFER_IN | TRANSFER_OUT), quantity, reference_type,
+  reference_id, movement_date, notes, created_by.
+
+### Phase 6 - Purchases
+- `purchases`: venture FK, supplier FK, invoice_number (unique per venture),
+  purchase_date, status, subtotal, discount, tax, total_amount, paid_amount,
+  due_amount, notes, created_by.
+- `purchase_items`: purchase FK, product FK, quantity, unit_price, discount,
+  tax, total.
+- `purchase_returns`, `purchase_return_items`.
+
+### Phase 7 - Sales
+- `sales`: venture FK, customer FK, invoice_number (unique per venture),
+  sale_date, status, subtotal, discount, tax, total_amount, paid_amount,
+  due_amount, notes, created_by.
+- `sale_items`: sale FK, product FK, quantity, unit_price, discount, tax, total.
+- `sales_returns`, `sales_return_items`.
+
+### Phase 8 - Finance
+- `payments`: venture FK, payment_type, reference_type, reference_id, amount,
+  payment_method (CASH | UPI | BANK_TRANSFER | CARD | OTHER), payment_date,
+  transaction_reference, notes, created_by.
+- `expense_categories`: static (Electricity, Transport, Rent, Salary,
+  Raw Materials, Marketing, Maintenance, Other).
+- `expenses`: venture FK, category FK, amount, expense_date, payment_method,
+  description, created_by.
+
+### Phase 9 - Employees
+- `employees`: venture FK, employee_code, first_name, last_name, phone, email,
+  department, designation, joining_date, salary, status.
+
+### Phase 11 - Platform
+- `audit_logs`: user FK, action, module, object_type, object_id, timestamp, ip,
+  description.
+- `notifications`: user FK, type, message, is_read, created_at.
+
+## Key Constraints & Business Rules
+
+- Product SKU is unique per venture.
+- Invoice numbers are unique per venture for sales and purchases.
+- Sale quantity cannot exceed available stock.
+- Purchase quantity must be non-negative.
+- Payment amount cannot exceed the outstanding amount (unless configured).
+- Stock mutations flow through `stock_movements`; the `inventory.quantity` is
+  derived from and consistent with those movements.
+- Inactive customers/suppliers are not selectable on new transactions.
+
+## ERD
+
+Entity relationship documentation is progressively added to this file as each
+module's models land. A rendered ERD / migration overview can also be generated
+with:
+
+```bash
+cd backend
+python manage.py graph_models -a -o docs/diagram.png   # requires pydot + graphviz
+```

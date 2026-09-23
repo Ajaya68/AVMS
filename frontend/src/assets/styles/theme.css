@@ -1,0 +1,120 @@
+:root {
+  --avms-sidebar-width: 260px;
+  --avms-sidebar-bg: #1f2937;
+  --avms-sidebar-text: #cbd5e1;
+  --avms-sidebar-active: #3b82f6;
+  --avms-sidebar-section: #6b7280;
+  --avms-topbar-bg: #ffffff;
+  --avms-content-bg: #f8f9fc;
+}
+
+body {
+  background-color: var(--avms-content-bg);
+}
+
+/* App shell ------------------------------------------------------------ */
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+}
+
+.app-sidebar {
+  width: var(--avms-sidebar-width);
+  background-color: var(--avms-sidebar-bg);
+  color: var(--avms-sidebar-text);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.app-offcanvas {
+  width: var(--avms-sidebar-width) !important;
+  background-color: var(--avms-sidebar-bg) !important;
+  color: var(--avms-sidebar-text);
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-content {
+  flex: 1;
+}
+
+/* Sidebar -------------------------------------------------------------- */
+
+.sidebar-brand {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-section {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--avms-sidebar-section);
+  font-weight: 600;
+}
+
+.sidebar-link {
+  text-decoration: none;
+  color: var(--avms-sidebar-text);
+  font-size: 0.9rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.sidebar-link.active {
+  background-color: var(--avms-sidebar-active);
+  color: #ffffff;
+  font-weight: 500;
+}
+
+/* Topbar --------------------------------------------------------------- */
+
+.topbar {
+  background-color: var(--avms-topbar-bg);
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  font-size: 0.9rem;
+}
+
+/* Auth ---------------------------------------------------------------- */
+
+.auth-shell {
+  min-height: 100vh;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+/* Misc ---------------------------------------------------------------- */
+
+.kpi-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 1.4rem;
+}
+
+.table > :not(caption) > * > * {
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+}

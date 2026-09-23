@@ -1,22 +1,23 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig, loadEnv } from "vite";
+import react from "@vitejs/plugin-react";
 
-// See `.env.example` for server configuration. The dev server proxies /api to
-// the Jakarta Servlet backend. In production Nginx performs this proxy.
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: process.env.VITE_API_TARGET || 'http://localhost:8080',
-        changeOrigin: true,
+// https://vite.dev/config/
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  const apiTarget = env.VITE_API_URL || "http://localhost:8000";
+
+  return {
+    plugins: [react()],
+    server: {
+      port: 5173,
+      proxy: {
+        // In dev, /api requests are forwarded to Django so the browser
+        // never needs to deal with CORS.
+        "/api": {
+          target: apiTarget,
+          changeOrigin: true,
+        },
       },
     },
-  },
-  build: {
-    outDir: 'dist',
-    sourcemap: false,
-    chunkSizeWarningLimit: 1200,
-  },
+  };
 });
