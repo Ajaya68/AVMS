@@ -137,7 +137,18 @@ AVMS/
   Sales Returns (list + shared return form)
 - Backend suite green (98 tests)
 
-Planned: Phase 8 (Payments/Expenses) -> Phase 9 (Employees) -> ... per `docs/ARCHITECTURE.md`.
+### Phase 8 - Finance (complete)
+- `payments` app: RECEIVED payments settle sale dues (money in), PAID payments
+  settle purchase dues (money out); amount is capped at the bill's outstanding
+  balance, applying updates the bill's paid/due, DELETE reverses the payment
+- `expenses` app: category-based operating expenses (static categories seeded
+  via data migration), full CRUD
+- Frontend: Payments (list w/ type filter, record-payment modal that picks
+  open sale/purchase references and caps the amount, one-click reversal),
+  Expenses (list/search/category filter, inline delete, totals)
+- Backend suite green (111 tests)
+
+Planned: Phase 9 (Employees) -> Phase 10 (Reports) -> ... per `docs/ARCHITECTURE.md`.
 
 ## Running the Project
 

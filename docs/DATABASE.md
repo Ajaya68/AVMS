@@ -114,12 +114,14 @@ Plus Django's standard `auth_group`, `auth_permission`, `django_admin_log`,
   (stock-out, guarded by availability); creating a return records
   `SALES_RETURN` movements (stock back in) and adjusts the sale balances.
 
-### Phase 8 - Finance
-- `payments`: venture FK, payment_type, reference_type, reference_id, amount,
-  payment_method (CASH | UPI | BANK_TRANSFER | CARD | OTHER), payment_date,
-  transaction_reference, notes, created_by.
+### Phase 8 - Finance (complete)
+- `payments`: venture FK, payment_type (RECEIVED | PAID), reference_type
+  (SALE | PURCHASE), reference_id, amount, payment_date, payment_method
+  (CASH | UPI | BANK_TRANSFER | CARD | OTHER), transaction_reference, notes,
+  created_by. Applying a payment increments the referenced bill's paid_amount;
+  deleting reverses it.
 - `expense_categories`: static (Electricity, Transport, Rent, Salary,
-  Raw Materials, Marketing, Maintenance, Other).
+  Raw Materials, Marketing, Maintenance, Other) - seeded by data migration.
 - `expenses`: venture FK, category FK, amount, expense_date, payment_method,
   description, created_by.
 

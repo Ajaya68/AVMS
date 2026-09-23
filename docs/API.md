@@ -174,9 +174,20 @@ authorization; the frontend only hides what the user cannot do.
 - Auth: `sales.view/manage`, `sales_returns.view/manage`. All reads honour
   `X-Venture-Id`; sales/returns are audited.
 
-### Phase 8 - Finance
-- `GET/POST /api/payments/`
-- `GET/POST /api/expenses/`
+### Phase 8 - Finance (complete)
+- `payments`: `GET/POST /api/payments/` (filter `?payment_type=`, `?reference_type=`),
+  `GET/DELETE /api/payments/{id}/`. Settles a bill: `RECEIVED` references a sale
+  (money in), `PAID` references a purchase (money out). Amount cannot exceed the
+  bill's outstanding balance; applying increments the bill's paid_amount and
+  recomputes due. DELETE reverses the payment (paid_amount rollback).
+  Payment methods: CASH | UPI | BANK_TRANSFER | CARD | OTHER.
+- `expenses`: `GET/POST /api/expenses/` (search, `?category=`),
+  `GET/PATCH/DELETE /api/expenses/{id}/`; `GET /api/expense-categories/`
+  (static: Electricity, Transport, Rent, Salary, Raw Materials, Marketing,
+  Maintenance, Other).
+- Auth: `payments.view/manage`, `expenses.view/manage`. All reads honour
+  `X-Venture-Id`; payments/expenses are audited (payments also AUDIT DELETE
+  on reversal).
 
 ### Phase 9 - Employees
 - `GET/POST /api/employees/`, `/api/employees/{id}/`
