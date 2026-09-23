@@ -110,9 +110,21 @@ AVMS/
 - `GET /api/inventory/?low=true` returns only low-stock lines
 - Frontend: Warehouses CRUD, Inventory table with warehouse + low-stock filters,
   Stock Movements list + record-movement modal (transfer aware)
-- Backend suite green (67 tests)
 
-Planned: Phase 6 (Purchases) -> Phase 7 (Sales) -> ... per `docs/ARCHITECTURE.md`.
+### Phase 6 - Purchases (complete)
+- `purchases` app: purchase bills with nested item lines, auto invoice codes
+  (`PINV-####`), computed totals (subtotal/discount/tax/total/paid/due),
+  statuses (PENDING/PARTIAL/COMPLETED/RETURNED/CANCELLED)
+- Posting a purchase atomically records `PURCHASE` stock movements at its
+  warehouse; purchase returns apply `PURCHASE_RETURN` movements and reduce the
+  bill balances (returned/due) with cumulative-quantity validation
+- Delete of a stock-received purchase blocked (reverse via return instead)
+- Frontend: Purchases (list/search/status filter, new-purchase form with
+  dynamic item rows, detail w/ balances, return-from-detail), Purchase Returns
+  (list + shared return form)
+- Backend suite green (84 tests)
+
+Planned: Phase 7 (Sales) -> Phase 8 (Payments) -> ... per `docs/ARCHITECTURE.md`.
 
 ## Running the Project
 

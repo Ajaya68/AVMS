@@ -85,13 +85,20 @@ Plus Django's standard `auth_group`, `auth_permission`, `django_admin_log`,
   quantity, movement_date, notes, reference_type/id, created_by, paired_movement
   (transfer pairs).
 
-### Phase 6 - Purchases
-- `purchases`: venture FK, supplier FK, invoice_number (unique per venture),
-  purchase_date, status, subtotal, discount, tax, total_amount, paid_amount,
+### Phase 6 - Purchases (complete)
+- `purchases`: venture FK, supplier FK, warehouse FK (nullable - receipt point),
+  invoice_number (auto `PINV-####`, unique per venture), purchase_date, status,
+  subtotal, discount, tax, total_amount, paid_amount, returned_amount,
   due_amount, notes, created_by.
-- `purchase_items`: purchase FK, product FK, quantity, unit_price, discount,
-  tax, total.
-- `purchase_returns`, `purchase_return_items`.
+- `purchase_items`: purchase FK, product FK, quantity, unit_price, discount
+  (per-line amount), tax (per-line %), total.
+- `purchase_returns`: venture FK, purchase FK, return_number (auto `RET-####`,
+  unique per venture), return_date, status, total_amount, notes, created_by.
+- `purchase_return_items`: purchase_return FK, product FK, quantity, unit_price,
+  total.
+- Stock integration: creating a purchase records `PURCHASE` movements at its
+  warehouse; creating a return records `PURCHASE_RETURN` movements against the
+  purchase warehouse and adjusts the purchase balances.
 
 ### Phase 7 - Sales
 - `sales`: venture FK, customer FK, invoice_number (unique per venture),

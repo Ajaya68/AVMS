@@ -138,10 +138,23 @@ authorization; the frontend only hides what the user cannot do.
 - Auth: `warehouses.view/manage`, `inventory.view`, `stock_movements.view/manage`.
   All reads honour `X-Venture-Id`. Movements are audited (CREATE).
 
-### Phase 6 - Purchases
-- `GET/POST /api/purchases/`, `/api/purchases/{id}/`
-- `GET /api/purchases/{id}/items/`
-- `GET/POST /api/purchase-returns/`
+### Phase 6 - Purchases (complete)
+- `purchases`: `GET/POST /api/purchases/` (search invoice/supplier, `?status=`),
+  `GET/PATCH/DELETE /api/purchases/{id}/`, `GET /api/purchases/{id}/items/`.
+  Auto `PINV-####` invoice numbers per venture. Nested writable `items`
+  (product, quantity, unit_price, discount, tax%). Totals are computed
+  server-side (subtotal, discount, tax, total, paid, returned, due).
+  POST is atomic: records the bill AND applies `PURCHASE` stock movements at
+  the chosen warehouse (`warehouse` optional - without it no stock is posted).
+  Delete is blocked once stock was received (reverses land in purchase returns).
+  Statuses: PENDING/PARTIAL/COMPLETED/RETURNED/CANCELLED.
+- `purchase-returns`: `GET/POST /api/purchase-returns/`, `GET /api/purchase-returns/{id}/`.
+  Auto `RET-####` numbers; nested items limited to products from the purchase;
+  cumulative return qty per product cannot exceed purchased qty; applies
+  `PURCHASE_RETURN` stock movements (uses the purchase warehouse) and reduces
+  the purchase's returned/due balances (status -> PARTIAL/RETURNED).
+- Auth: `purchases.view/manage`, `purchase_returns.view/manage`. All reads
+  honour `X-Venture-Id`; purchases/returns are audited (CREATE/UPDATE/DELETE).
 
 ### Phase 7 - Sales
 - `GET/POST /api/sales/`, `/api/sales/{id}/`
