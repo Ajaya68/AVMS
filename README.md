@@ -88,7 +88,20 @@ AVMS/
 - Every venture create/update/delete writes an `AuditLog`
 - Backend suite green (42 tests), lint 0 warnings, build OK
 
-Planned: Phase 4 (Masters) -> Phase 5 (Inventory) -> ... per `docs/ARCHITECTURE.md`.
+### Phase 4 - Masters (complete)
+- `customers`, `suppliers`, `products`, `categories`, `units` apps with shared
+  CRUD base views (`core/crud_views.py`) + serialized per-venture code
+  generator (`core.SequenceCounter`, `generate_code`)
+- Auto codes: customers `C-####`, suppliers `S-####`, products `P-####` (unique
+  SKU per venture); units seeded (kg, g, pcs, packet, litre, box)
+- All master reads honour the `X-Venture-Id` header; `{module}.view/manage`
+  permissions enforced; writes audited
+- Frontend: generic `MasterEntityPage` CRUD screen, Venture selector in Topbar
+  drives `X-Venture-Id`, dedicated Customers/Suppliers/Products/Categories/Units
+  pages; lint 0 warnings, build OK
+- Backend suite green (57 tests)
+
+Planned: Phase 5 (Inventory) -> Phase 6 (Purchases) -> ... per `docs/ARCHITECTURE.md`.
 
 ## Running the Project
 

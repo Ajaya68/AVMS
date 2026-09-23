@@ -60,16 +60,19 @@ Plus Django's standard `auth_group`, `auth_permission`, `django_admin_log`,
   `SELECT ... FOR UPDATE` + `F()` increment; counter row persists across deletes so
   codes never repeat (independent of MySQL auto-increment gaps in tests).
 
-### Phase 4 - Masters
-- `customers`: venture FK, customer_code, name, phone, email, address, city,
-  state, pincode, gst_number, credit_limit, status.
-- `suppliers`: venture FK, supplier_code, name, contact_person, phone, email,
-  address, city, state, pincode, gst_number, payment_terms, status.
-- `categories`: venture FK, category_name, description, status.
-- `units`: static short codes (kg, g, pcs, packet, litre, box).
-- `products`: venture FK, category FK, unit FK, sku (unique per venture),
+### Phase 4 - Masters (complete)
+- `customers`: `customers_*`, customer_code (unique per venture), name, phone,
+  email, address, city, state, pincode, gst_number, credit_limit, status.
+- `suppliers`: `suppliers_*`, supplier_code (unique per venture), name,
+  contact_person, phone, email, address, city, state, pincode, gst_number,
+  payment_terms, status.
+- `categories`: `products_category`, venture-scoped, category_name + description + status.
+- `units`: `products_unit` static codes (kg, g, pcs, packet, litre, box).
+- `products`: `products_product`, sku (unique per venture), category FK, unit FK,
   product_name, description, purchase_price, selling_price, tax_rate,
   reorder_level, status.
+- Codes for all masters come from `core_sequencecounter` (one row per
+  module+venture, `SELECT ... FOR UPDATE` + `F()` increment).
 
 ### Phase 5 - Inventory
 - `warehouses`: venture FK, warehouse_code, warehouse_name, address, city,

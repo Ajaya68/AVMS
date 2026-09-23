@@ -9,6 +9,11 @@ import UsersPage from "../pages/users/UsersPage";
 import RolesPage from "../pages/roles/RolesPage";
 import VenturesPage from "../pages/ventures/VenturesPage";
 import VentureDetailPage from "../pages/ventures/VentureDetailPage";
+import CustomersPage from "../pages/customers/CustomersPage";
+import SuppliersPage from "../pages/suppliers/SuppliersPage";
+import ProductsPage from "../pages/products/ProductsPage";
+import CategoriesPage from "../pages/products/CategoriesPage";
+import UnitsPage from "../pages/products/UnitsPage";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -24,11 +29,11 @@ const router = createBrowserRouter(
       <Route index element={<Dashboard />} />
       <Route path="ventures" element={<VenturesPage />} />
       <Route path="ventures/:id" element={<VentureDetailPage />} />
-      <Route path="customers" element={<PlaceholderPage />} />
-      <Route path="suppliers" element={<PlaceholderPage />} />
-      <Route path="products" element={<PlaceholderPage />} />
-      <Route path="categories" element={<PlaceholderPage />} />
-      <Route path="units" element={<PlaceholderPage />} />
+      <Route path="customers" element={<CustomersPage />} />
+      <Route path="suppliers" element={<SuppliersPage />} />
+      <Route path="products" element={<ProductsPage />} />
+      <Route path="categories" element={<CategoriesPage />} />
+      <Route path="units" element={<UnitsPage />} />
       <Route path="warehouses" element={<PlaceholderPage />} />
       <Route path="inventory" element={<PlaceholderPage />} />
       <Route path="stock-movements" element={<PlaceholderPage />} />

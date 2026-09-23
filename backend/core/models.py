@@ -14,6 +14,32 @@ class TimeStampedModel(models.Model):
         ordering = ["-created_at"]
 
 
+class SequenceCounter(models.Model):
+    """Per-(module, venture) sequential code counter.
+
+    Serialized via ``SELECT ... FOR UPDATE`` so concurrent creations cannot
+    receive duplicate codes (see the venture-code bug where MySQL auto-increment
+    gaps shifted codes). Rows survive row deletes, so codes never repeat.
+    """
+
+    module = models.CharField(max_length=40)
+    venture = models.ForeignKey(
+        "ventures.Venture",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="+",
+    )
+    next_value = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["module", "venture"], name="uniq_sequence_module_venture"
+            )
+        ]
+
+
 class SoftDeleteQuerySet(models.QuerySet):
     """Filters out soft-deleted rows by default."""
 

@@ -106,12 +106,23 @@ authorization; the frontend only hides what the user cannot do.
 - Fields: venture_name, business_type (MUSHROOM | FISH_FARMING | AGRICULTURE | POULTRY | DAIRY | GENERAL | OTHER), status (ACTIVE | INACTIVE), phone, email, address, city, state, pincode, description.
 - Every create/update/delete writes an `AuditLog` (action CREATE/UPDATE/DELETE, entity_type `Venture`).
 
-### Phase 4 - Masters
-- `GET/POST /api/customers/`, `/api/customers/{id}/`
-- `GET/POST /api/suppliers/`, `/api/suppliers/{id}/`
-- `GET/POST /api/categories/`, `/api/categories/{id}/`
-- `GET/POST /api/units/`, `/api/units/{id}/`
-- `GET/POST /api/products/`, `/api/products/{id}/`
+### Phase 4 - Masters (complete)
+- `customers`: `GET/POST /api/customers/`, `GET/PATCH/DELETE /api/customers/{id}/`
+  — auto `C-####` per-venture codes, search by name/code/city/phone/email.
+- `suppliers`: `GET/POST /api/suppliers/`, `GET/PATCH/DELETE /api/suppliers/{id}/`
+  — auto `S-####` per-venture codes.
+- `products`: `GET/POST /api/products/`, `/api/products/{id}/` — auto `P-####`
+  SKU (unique per venture), category + unit lookups.
+- `categories`: `GET/POST /api/categories/`, `/api/categories/{id}/`.
+- `units`: `GET/POST /api/units/` (kg, g, pcs, packet, litre, box seeded via data
+  migration).
+- Auth: `{module}.view` (reads) / `{module}.manage` (writes) for customers,
+  suppliers, products, categories, units. All reads honour the `X-Venture-Id`
+  header (unscoped = all ventures). Every create/update/delete writes an
+  `AuditLog`.
+- All master endpoints are driven by the shared `core.crud_views`
+  (`MasterListCreateView`/`MasterDetailView`) and the `core.SequenceCounter`
+  code generator (`generate_code(module, venture, prefix)`).
 
 ### Phase 5 - Inventory
 - `GET/POST /api/warehouses/`, `/api/warehouses/{id}/`

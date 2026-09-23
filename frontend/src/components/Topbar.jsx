@@ -2,6 +2,7 @@ import { Dropdown } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
+import VentureSelector from "./VentureSelector";
 
 function Topbar({ onToggleSidebar }) {
   const { user, logout } = useAuth();
@@ -37,6 +38,7 @@ function Topbar({ onToggleSidebar }) {
       </div>
 
       <div className="ms-auto d-flex align-items-center gap-3">
+        <VentureSelector />
         <button
           className="btn btn-link position-relative text-body p-1"
           type="button"

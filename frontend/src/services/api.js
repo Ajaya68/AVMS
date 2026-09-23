@@ -16,8 +16,24 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  const ventureId = localStorage.getItem("active_venture_id");
+  if (ventureId) {
+    config.headers["X-Venture-Id"] = ventureId;
+  }
   return config;
 });
+
+export function setActiveVentureId(ventureId) {
+  if (ventureId) {
+    localStorage.setItem("active_venture_id", String(ventureId));
+  } else {
+    localStorage.removeItem("active_venture_id");
+  }
+}
+
+export function getActiveVentureId() {
+  return localStorage.getItem("active_venture_id") || "";
+}
 
 // --- Refresh flow ---------------------------------------------------------
 // A single-flight refresh: when several requests fail with 401 at the same
