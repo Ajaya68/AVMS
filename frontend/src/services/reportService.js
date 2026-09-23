@@ -1,13 +1,13 @@
 import api from "./api";
 
 export const fetchSalesReport = (params = {}) =>
-  api.get("/reports/sales/", { params }).then((r) => r.data.data);
+  api.get("/reports/sales/", { params });
 
 export const fetchPurchasesReport = (params = {}) =>
-  api.get("/reports/purchases/", { params }).then((r) => r.data.data);
+  api.get("/reports/purchases/", { params });
 
 export const fetchInventoryReport = (params = {}) =>
-  api.get("/reports/inventory/", { params }).then((r) => r.data.data);
+  api.get("/reports/inventory/", { params });
 
 export const fetchFinancialReport = (params = {}) =>
-  api.get("/reports/financial/", { params }).then((r) => r.data.data);
+  api.get("/reports/financial/", { params });

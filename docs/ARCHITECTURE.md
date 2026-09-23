@@ -111,8 +111,12 @@ verified end-to-end before a phase ships.
     inventory with low-stock alerts, financials with outstanding and cash flow.
 11. **Phase 11 - Audit & Notifications** (complete): filterable audit trail API,
     per-user notifications auto-fired on stock/bill/payment events.
-12. **Phase 12 - UI/UX** (current): responsive polish, empty/error states, toasts.
-13. **Phase 13 - Testing**: end-to-end and regression fixes.
+12. **Phase 12 - UI/UX** (complete): global toast notifications auto-fired on
+     every CRUD/mutation and 5xx, live KPI dashboard (sales, purchases,
+     receivables, stock value), low-stock alerts and recent-activity feed,
+     live unread-notification bell in the topbar, empty/error/loading states
+     across all list pages.
+ 13. **Phase 13 - Testing** (current): end-to-end and regression fixes.
 14. **Phase 14 - Production**: hardening + deployment.
 
 ## Rules of Engagement

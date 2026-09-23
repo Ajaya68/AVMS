@@ -1,7 +1,7 @@
 import api from "./api";
 
 export const fetchAuditLogs = (params = {}) =>
-  api.get("/audit-logs/", { params: { page_size: 25, ...params } }).then((r) => r.data.data);
+  api.get("/audit-logs/", { params: { page_size: 25, ...params } });
 
 export const AUDIT_ACTIONS = [
   "LOGIN",

@@ -166,8 +166,17 @@ AVMS/
 - Frontend: Notifications page (unread badge, mark read / mark all) and
   Audit Logs page (filters: module, action, date range, search + pagination)
 - Backend suite green (129 tests)
+### Phase 12 - UI/UX polish (complete)
+- Global toast system (ToastProvider + interceptor events): every successful
+  create/update/delete/record and every 5xx surfaces an unobtrusive toast,
+  no per-page wiring required
+- Dashboard now shows live KPIs (net sales, net purchases, receivables, stock
+  value over 30 days) plus a low-stock alert panel and a recent-activity feed
+- Topbar notification bell shows the live unread count (30s polling) and links
+  to the Notifications inbox
+- Empty, error and loading states audited across all list pages
 
-Planned: Phase 12 (UI/UX) -> Phase 13 (Testing) -> ... per `docs/ARCHITECTURE.md`.
+Planned: Phase 13 (Testing) -> Phase 14 (Production) per `docs/ARCHITECTURE.md`.
 
 ## Running the Project
 

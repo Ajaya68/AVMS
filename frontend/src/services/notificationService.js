@@ -1,16 +1,16 @@
 import api from "./api";
 
 export const fetchNotifications = (params = {}) =>
-  api.get("/notifications/", { params: { page_size: 25, ...params } }).then((r) => r.data.data);
+  api.get("/notifications/", { params: { page_size: 25, ...params } });
 
 export const fetchUnreadCount = () =>
-  api.get("/notifications/unread-count/").then((r) => r.data.data);
+  api.get("/notifications/unread-count/");
 
 export const markNotificationRead = (id) =>
-  api.post(`/notifications/${id}/read/`).then((r) => r.data.data);
+  api.post(`/notifications/${id}/read/`);
 
 export const markAllNotificationsRead = () =>
-  api.post("/notifications/read-all/").then((r) => r.data.data);
+  api.post("/notifications/read-all/");
 
 export const TYPE_BADGES = {
   LOW_STOCK: "text-bg-danger",

@@ -1,12 +1,26 @@
+import { useEffect } from "react";
 import { Dropdown } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
+import { fetchUnreadCount } from "../services/notificationService";
+import { useApi } from "../hooks/useApi";
 import VentureSelector from "./VentureSelector";
 
 function Topbar({ onToggleSidebar }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const { data: unread, loading } = useApi(() => fetchUnreadCount(), []);
+  const count = loading ? 0 : (unread?.count ?? 0);
+
+  // Light polling so the bell stays roughly current.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      fetchUnreadCount().catch(() => {});
+    }, 30000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -43,11 +57,14 @@ function Topbar({ onToggleSidebar }) {
           className="btn btn-link position-relative text-body p-1"
           type="button"
           aria-label="Notifications"
+          onClick={() => navigate("/notifications")}
         >
           <i className="bi bi-bell fs-5" />
-          <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
-            0
-          </span>
+          {count > 0 && (
+            <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+              {count > 99 ? "99+" : count}
+            </span>
+          )}
         </button>
 
         <Dropdown align="end">

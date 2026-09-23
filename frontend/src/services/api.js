@@ -71,11 +71,25 @@ function clearSession() {
 
 // Normalize responses. The backend envelopes payloads as
 // { success, data, message } for success and { success, message, errors }
-// for failures. SimpleJWT's raw refresh response is left untouched.
+// for failures. SimpleJWT's raw refresh response is left untouched. Success
+// messages on mutating calls are broadcast so the UI can surface toasts.
+const MUTATING_METHODS = new Set(["post", "patch", "put", "delete"]);
+
+function broadcastToast(variant, message) {
+  if (message) {
+    window.dispatchEvent(
+      new CustomEvent("avms:toast", { detail: { variant, message } })
+    );
+  }
+}
+
 api.interceptors.response.use(
   (response) => {
     const body = response.data;
     if (body && typeof body === "object" && "success" in body) {
+      if (MUTATING_METHODS.has(response.config.method) && body.success) {
+        broadcastToast("success", body.message);
+      }
       return body.data;
     }
     return response.data;
@@ -83,8 +97,9 @@ api.interceptors.response.use(
   async (error) => {
     const original = error.config;
     const isAuthUrl = original?.url?.includes("/auth/");
+    const status = error.response?.status;
     if (
-      error.response?.status === 401 &&
+      status === 401 &&
       !isAuthUrl &&
       original &&
       !original._retried
@@ -100,6 +115,11 @@ api.interceptors.response.use(
         }
         return Promise.reject(refreshError);
       }
+    }
+    if (status >= 500 && !isAuthUrl) {
+      const message =
+        error.response?.data?.message || "Something went wrong on the server.";
+      broadcastToast("danger", message);
     }
     return Promise.reject(error);
   }
