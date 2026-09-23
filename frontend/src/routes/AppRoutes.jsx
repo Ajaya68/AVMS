@@ -19,6 +19,8 @@ import InventoryPage from "../pages/inventory/InventoryPage";
 import StockMovementsPage from "../pages/inventory/StockMovementsPage";
 import PurchasesPage from "../pages/purchases/PurchasesPage";
 import PurchaseReturnsPage from "../pages/purchases/PurchaseReturnsPage";
+import SalesPage from "../pages/sales/SalesPage";
+import SaleReturnsPage from "../pages/sales/SaleReturnsPage";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -42,9 +44,9 @@ const router = createBrowserRouter(
       <Route path="warehouses" element={<WarehousesPage />} />
       <Route path="inventory" element={<InventoryPage />} />
       <Route path="stock-movements" element={<StockMovementsPage />} />
-      <Route path="sales" element={<PlaceholderPage />} />
+      <Route path="sales" element={<SalesPage />} />
       <Route path="purchases" element={<PurchasesPage />} />
-      <Route path="sales-returns" element={<PlaceholderPage />} />
+      <Route path="sales-returns" element={<SaleReturnsPage />} />
       <Route path="purchase-returns" element={<PurchaseReturnsPage />} />
       <Route path="payments" element={<PlaceholderPage />} />
       <Route path="expenses" element={<PlaceholderPage />} />

@@ -100,8 +100,10 @@ verified end-to-end before a phase ships.
    transactional application of deltas (+ transfers), low-stock view.
 6. **Phase 6 - Purchases** (complete): purchases with item lines, auto invoice
    codes, stock-in posting, purchase returns with stock-out and balance settle.
-7. **Phase 7 - Sales** (current): sales, sale items, returns, balances, stock integration.
-8. **Phase 8 - Finance**: payments, expenses, receivables, payables.
+7. **Phase 7 - Sales** (complete): sales with item lines, auto invoice codes,
+   stock-out posting (availability-guarded), sales returns restoring stock and
+   settling balances.
+8. **Phase 8 - Finance** (current): payments, expenses, receivables, payables.
 9. **Phase 9 - Employees**: basic employee management.
 10. **Phase 10 - Reports**: sales/purchase/inventory/financial reports + charts.
 11. **Phase 11 - Audit & Notifications**: audit log, notifications.

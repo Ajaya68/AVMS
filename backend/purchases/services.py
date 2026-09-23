@@ -25,6 +25,7 @@ def finalize_purchase(request, purchase, warehouse, items):
     """Persist purchase items, total the bill and apply stock-in movements."""
     with transaction.atomic():
         purchase.warehouse = warehouse
+        purchase.save()
         if warehouse is not None:
             for item in items:
                 _apply_stock(
@@ -93,7 +94,7 @@ def finalize_purchase_return(request, purchase_return, items):
             purchase.returned_amount + purchase_return.total_amount
         )
         purchase.recompute()
-        if purchase.returned_amount > 0 and purchase.due_amount == 0:
+        if purchase.returned_amount >= purchase.total_amount:
             purchase.status = Purchase.STATUS_RETURNED
         elif purchase.returned_amount > 0:
             purchase.status = Purchase.STATUS_PARTIAL

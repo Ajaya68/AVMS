@@ -2,17 +2,17 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
-from .models import Purchase, PurchaseItem, PurchaseReturn, PurchaseReturnItem
-from .services import finalize_purchase, finalize_purchase_return
+from .models import Sale, SaleItem, SaleReturn, SaleReturnItem
+from .services import finalize_sale, finalize_sale_return
 
 
-class PurchaseItemSerializer(serializers.ModelSerializer):
+class SaleItemSerializer(serializers.ModelSerializer):
     product_sku = serializers.CharField(source="product.sku", read_only=True)
     product_name = serializers.CharField(source="product.product_name", read_only=True)
     unit_code = serializers.CharField(source="product.unit.unit_code", read_only=True)
 
     class Meta:
-        model = PurchaseItem
+        model = SaleItem
         fields = [
             "id", "product", "product_sku", "product_name", "unit_code",
             "quantity", "unit_price", "discount", "tax", "total",
@@ -20,19 +20,19 @@ class PurchaseItemSerializer(serializers.ModelSerializer):
         read_only_fields = ["total"]
 
 
-class PurchaseSerializer(serializers.ModelSerializer):
-    supplier_name = serializers.CharField(source="supplier.name", read_only=True)
-    supplier_code = serializers.CharField(source="supplier.supplier_code", read_only=True)
+class SaleSerializer(serializers.ModelSerializer):
+    customer_name = serializers.CharField(source="customer.name", read_only=True)
+    customer_code = serializers.CharField(source="customer.customer_code", read_only=True)
     venture_name = serializers.CharField(source="venture.venture_code", read_only=True)
     warehouse_code = serializers.CharField(source="warehouse.warehouse_code", read_only=True)
-    items = PurchaseItemSerializer(many=True, required=False)
+    items = SaleItemSerializer(many=True, required=False)
 
     class Meta:
-        model = Purchase
+        model = Sale
         fields = [
-            "id", "venture", "venture_name", "supplier", "supplier_code",
-            "supplier_name", "warehouse", "warehouse_code", "invoice_number",
-            "purchase_date", "status", "subtotal", "discount", "tax",
+            "id", "venture", "venture_name", "customer", "customer_code",
+            "customer_name", "warehouse", "warehouse_code", "invoice_number",
+            "sale_date", "status", "subtotal", "discount", "tax",
             "total_amount", "paid_amount", "returned_amount", "due_amount",
             "notes", "created_by", "items", "created_at", "updated_at",
         ]
@@ -44,17 +44,19 @@ class PurchaseSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         venture = attrs.get("venture") or getattr(getattr(self, "instance", None), "venture", None)
-        supplier = attrs.get("supplier", getattr(getattr(self, "instance", None), "supplier", None))
+        customer = attrs.get("customer", getattr(getattr(self, "instance", None), "customer", None))
         warehouse = attrs.get("warehouse", getattr(getattr(self, "instance", None), "warehouse", None))
         items = attrs.get("items", [])
-        for name, value, kind in [("supplier", supplier, "Supplier"), ("warehouse", warehouse, "Warehouse")]:
+        for name, value, kind in [("customer", customer, "Customer"), ("warehouse", warehouse, "Warehouse")]:
             if value is not None and value.venture_id != venture.id:
                 raise serializers.ValidationError(
                     {name: [f"{kind} does not belong to the selected venture"]}
                 )
         for i, item in enumerate(items):
             if not (Decimal(str(item["quantity"])) > 0):
-                raise serializers.ValidationError({f"items.{i}": ["Quantity must be greater than zero"]})
+                raise serializers.ValidationError(
+                    {f"items.{i}": ["Quantity must be greater than zero"]}
+                )
             if item["product"].venture_id != venture.id:
                 raise serializers.ValidationError(
                     {f"items.{i}.product": ["Product does not belong to the selected venture"]}
@@ -68,23 +70,18 @@ class PurchaseSerializer(serializers.ModelSerializer):
         if user is not None and getattr(user, "is_authenticated", False):
             validated_data["created_by"] = user
 
-        purchase = Purchase(**validated_data)
-
-        purchase_items = [
-            PurchaseItem(purchase=purchase, **fields) for fields in items
-        ]
-        finalize_purchase(
-            request, purchase, purchase.warehouse, purchase_items
-        )
-        return purchase
+        sale = Sale(**validated_data)
+        sale_items = [SaleItem(sale=sale, **fields) for fields in items]
+        finalize_sale(request, sale, sale.warehouse, sale_items)
+        return sale
 
 
-class PurchaseReturnItemSerializer(serializers.ModelSerializer):
+class SaleReturnItemSerializer(serializers.ModelSerializer):
     product_sku = serializers.CharField(source="product.sku", read_only=True)
     product_name = serializers.CharField(source="product.product_name", read_only=True)
 
     class Meta:
-        model = PurchaseReturnItem
+        model = SaleReturnItem
         fields = [
             "id", "product", "product_sku", "product_name",
             "quantity", "unit_price", "total",
@@ -92,41 +89,39 @@ class PurchaseReturnItemSerializer(serializers.ModelSerializer):
         read_only_fields = ["total"]
 
 
-class PurchaseReturnSerializer(serializers.ModelSerializer):
-    purchase_invoice = serializers.CharField(source="purchase.invoice_number", read_only=True)
-    supplier_name = serializers.CharField(source="purchase.supplier.name", read_only=True)
+class SaleReturnSerializer(serializers.ModelSerializer):
+    sale_invoice = serializers.CharField(source="sale.invoice_number", read_only=True)
+    customer_name = serializers.CharField(source="sale.customer.name", read_only=True)
     venture_name = serializers.CharField(source="venture.venture_code", read_only=True)
-    items = PurchaseReturnItemSerializer(many=True, required=False)
+    items = SaleReturnItemSerializer(many=True, required=False)
 
     class Meta:
-        model = PurchaseReturn
+        model = SaleReturn
         fields = [
-            "id", "venture", "venture_name", "purchase", "purchase_invoice",
-            "supplier_name", "return_number", "return_date", "status",
+            "id", "venture", "venture_name", "sale", "sale_invoice",
+            "customer_name", "return_number", "return_date", "status",
             "total_amount", "notes", "created_by", "items", "created_at",
         ]
         read_only_fields = ["return_number", "status", "total_amount", "created_by", "created_at"]
 
     def validate(self, attrs):
         venture = attrs.get("venture") or getattr(getattr(self, "instance", None), "venture", None)
-        purchase = attrs.get("purchase", getattr(getattr(self, "instance", None), "purchase", None))
-        if purchase is not None and purchase.venture_id != venture.id:
+        sale = attrs.get("sale", getattr(getattr(self, "instance", None), "sale", None))
+        if sale is not None and sale.venture_id != venture.id:
             raise serializers.ValidationError(
-                {"purchase": ["Purchase does not belong to the selected venture"]}
+                {"sale": ["Sale does not belong to the selected venture"]}
             )
         items = attrs.get("items", [])
-        if purchase is not None:
-            returnable_ids = set(
-                purchase.items.values_list("product_id", flat=True)
-            )
+        if sale is not None:
+            sale_item_ids = set(sale.items.values_list("product_id", flat=True))
             for i, item in enumerate(items):
                 if item["product"].venture_id != venture.id:
                     raise serializers.ValidationError(
                         {f"items.{i}.product": ["Product does not belong to the selected venture"]}
                     )
-                if item["product"].id not in returnable_ids:
+                if item["product"].id not in sale_item_ids:
                     raise serializers.ValidationError(
-                        {f"items.{i}.product": ["Product was not part of this purchase"]}
+                        {f"items.{i}.product": ["Product was not part of this sale"]}
                     )
         return attrs
 
@@ -137,12 +132,12 @@ class PurchaseReturnSerializer(serializers.ModelSerializer):
         if user is not None and getattr(user, "is_authenticated", False):
             validated_data["created_by"] = user
 
-        purchase = validated_data["purchase"]
-        return_record = PurchaseReturn.objects.create(**validated_data)
+        sale = validated_data["sale"]
+        return_record = SaleReturn.objects.create(**validated_data)
 
         return_items = [
-            PurchaseReturnItem(purchase_return=return_record, **fields)
+            SaleReturnItem(sale_return=return_record, **fields)
             for fields in items
         ]
-        finalize_purchase_return(request, return_record, return_items)
+        finalize_sale_return(request, return_record, return_items)
         return return_record

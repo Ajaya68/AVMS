@@ -100,12 +100,19 @@ Plus Django's standard `auth_group`, `auth_permission`, `django_admin_log`,
   warehouse; creating a return records `PURCHASE_RETURN` movements against the
   purchase warehouse and adjusts the purchase balances.
 
-### Phase 7 - Sales
-- `sales`: venture FK, customer FK, invoice_number (unique per venture),
-  sale_date, status, subtotal, discount, tax, total_amount, paid_amount,
+### Phase 7 - Sales (complete)
+- `sales`: venture FK, customer FK, warehouse FK (nullable - dispatch point),
+  invoice_number (auto `SINV-####`, unique per venture), sale_date, status,
+  subtotal, discount, tax, total_amount, paid_amount, returned_amount,
   due_amount, notes, created_by.
-- `sale_items`: sale FK, product FK, quantity, unit_price, discount, tax, total.
-- `sales_returns`, `sales_return_items`.
+- `sale_items`: sale FK, product FK, quantity, unit_price, discount
+  (per-line amount), tax (per-line %), total.
+- `sales_returns`: venture FK, sale FK, return_number (auto `SRET-####`,
+  unique per venture), return_date, status, total_amount, notes, created_by.
+- `sales_return_items`: sales_return FK, product FK, quantity, unit_price, total.
+- Stock integration: creating a sale records `SALE` movements at its warehouse
+  (stock-out, guarded by availability); creating a return records
+  `SALES_RETURN` movements (stock back in) and adjusts the sale balances.
 
 ### Phase 8 - Finance
 - `payments`: venture FK, payment_type, reference_type, reference_id, amount,

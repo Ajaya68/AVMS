@@ -124,7 +124,20 @@ AVMS/
   (list + shared return form)
 - Backend suite green (84 tests)
 
-Planned: Phase 7 (Sales) -> Phase 8 (Payments) -> ... per `docs/ARCHITECTURE.md`.
+### Phase 7 - Sales (complete)
+- `sales` app: bills with nested item lines, auto invoice codes (`SINV-####`),
+  computed totals, statuses (PENDING/PARTIAL/COMPLETED/RETURNED/CANCELLED)
+- Posting a sale atomically applies `SALE` stock-out movements at its dispatch
+  warehouse and rejects if any line exceeds available stock; sales returns
+  apply `SALES_RETURN` movements (stock back in) and reduce balances with
+  cumulative-quantity validation
+- Delete of a stock-dispatched sale blocked (reverse via return instead)
+- Frontend: Sales (list/search/status filter, new-sale form with dynamic item
+  rows sized from selling price, detail w/ balances, return-from-detail),
+  Sales Returns (list + shared return form)
+- Backend suite green (98 tests)
+
+Planned: Phase 8 (Payments/Expenses) -> Phase 9 (Employees) -> ... per `docs/ARCHITECTURE.md`.
 
 ## Running the Project
 

@@ -156,10 +156,23 @@ authorization; the frontend only hides what the user cannot do.
 - Auth: `purchases.view/manage`, `purchase_returns.view/manage`. All reads
   honour `X-Venture-Id`; purchases/returns are audited (CREATE/UPDATE/DELETE).
 
-### Phase 7 - Sales
-- `GET/POST /api/sales/`, `/api/sales/{id}/`
-- `GET /api/sales/{id}/items/`
-- `GET/POST /api/sales-returns/`
+### Phase 7 - Sales (complete)
+- `sales`: `GET/POST /api/sales/` (search invoice/customer, `?status=`),
+  `GET/PATCH/DELETE /api/sales/{id}/`, `GET /api/sales/{id}/items/`.
+  Auto `SINV-####` invoice numbers per venture. Nested writable `items`
+  (product, quantity, unit_price, discount, tax%). Totals are computed
+  server-side. POST is atomic: records the bill AND applies `SALE` stock
+  movements (stock-out) at the dispatch warehouse, rejecting if any line
+  exceeds available stock. `warehouse` optional - without it no stock is
+  posted. Delete is blocked once stock was dispatched (reverse via returns).
+  Statuses: PENDING/PARTIAL/COMPLETED/RETURNED/CANCELLED.
+- `sales-returns`: `GET/POST /api/sales-returns/`, `GET /api/sales-returns/{id}/`.
+  Auto `SRET-####` numbers; nested items limited to products from the sale;
+  cumulative return qty per product cannot exceed sold qty; applies
+  `SALES_RETURN` stock movements (stock back in) and reduces the sale's
+  returned/due balances (status -> PARTIAL/RETURNED).
+- Auth: `sales.view/manage`, `sales_returns.view/manage`. All reads honour
+  `X-Venture-Id`; sales/returns are audited.
 
 ### Phase 8 - Finance
 - `GET/POST /api/payments/`
