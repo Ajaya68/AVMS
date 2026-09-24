@@ -97,7 +97,9 @@ class PaymentDetailView(APIView):
 
     def _get_payment(self, pk):
         try:
-            return Payment.objects.select_related("venture").get(pk=pk)
+            return scope_queryset_by_venture(
+                Payment.objects.select_related("venture"), self.request
+            ).get(pk=pk)
         except Payment.DoesNotExist:
             return None
 

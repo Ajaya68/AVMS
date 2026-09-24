@@ -188,3 +188,55 @@ SPECTACULAR_SETTINGS = {
 CSRF_TRUSTED_ORIGINS = env_list(
     "CSRF_TRUSTED_ORIGINS", ""
 )
+
+# Production hardening ------------------------------------------------------
+#
+# Everything below defaults to safe behaviour and is env-gated so local
+# development (plain http://localhost) is untouched. In production terminate
+# TLS at the reverse proxy; Django trusts the X-Forwarded-Proto header it
+# sends. Sensitive cookies are marked Secure and HSTS can be enabled with
+# SECURE_HSTS_SECONDS.
+
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", False)
+    SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", True)
+    CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", True)
+    SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "0"))
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = "same-origin"
+    X_FRAME_OPTIONS = "DENY"
+
+# Connection pooling for database-backed multi-process deployments keeps the
+# MySQL connection pool warm (gunicorn multicore). Dev runserver also benefits.
+DATABASES["default"]["CONN_MAX_AGE"] = int(os.getenv("DB_CONN_MAX_AGE", "60"))
+
+# Logging -------------------------------------------------------------------
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": os.getenv("LOG_LEVEL", "WARNING"),
+    },
+    "loggers": {
+        "django.db.backends": {
+            "handlers": ["console"],
+            "level": os.getenv("DJANGO_DB_LOG_LEVEL", "ERROR"),
+            "propagate": False,
+        },
+    },
+}

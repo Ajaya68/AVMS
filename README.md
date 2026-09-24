@@ -184,8 +184,17 @@ AVMS/
   purchases, payments, expenses, stock movements): fetching a row by id from
   another venture now 404s
 - Backend suite green (134 tests)
+### Phase 14 - Production hardening (complete)
+- Env-gated hardening in `settings.py`: pooled MySQL connections
+  (`CONN_MAX_AGE`), HTTPS proxy header + Secure/HttpOnly-style cookie flags +
+  HSTS/X-Frame-Options when `DEBUG=False`, structured console logging, and a
+  gunicorn config (`gunicorn --config gunicorn.conf.py config.wsgi`) with
+  `gunicorn==23.0.0` added to requirements
+- Updated `.env.example` with every production tunable; deployment remains
+  target-specific (operator's infrastructure)
 
-Planned: Phase 14 (Production) per `docs/ARCHITECTURE.md`.
+Phase 12 (UI/UX) through Phase 14 (Production) are complete per
+`docs/ARCHITECTURE.md`.
 
 ## Running the Project
 

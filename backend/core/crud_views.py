@@ -105,8 +105,11 @@ class MasterDetailView(APIView):
         return [IsAuthenticated(), HasPermission(f"{self.permission_module}.manage")]
 
     def _get_object(self, pk):
+        queryset = self.model.objects.all()
+        if getattr(self.model, "venture", None):
+            queryset = scope_queryset_by_venture(queryset, self.request)
         try:
-            return self.model.objects.get(pk=pk)
+            return queryset.get(pk=pk)
         except self.model.DoesNotExist:
             return None
 

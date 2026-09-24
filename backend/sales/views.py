@@ -93,9 +93,12 @@ class SaleDetailView(APIView):
 
     def _get_sale(self, pk):
         try:
-            return Sale.objects.select_related(
-                "venture", "customer", "warehouse"
-            ).prefetch_related("items", "items__product__unit").get(pk=pk)
+            return scope_queryset_by_venture(
+                Sale.objects.select_related(
+                    "venture", "customer", "warehouse"
+                ).prefetch_related("items", "items__product__unit"),
+                self.request,
+            ).get(pk=pk)
         except Sale.DoesNotExist:
             return None
 
@@ -161,7 +164,7 @@ class SaleItemsView(APIView):
 
     def get(self, request, pk):
         try:
-            Sale.objects.get(pk=pk)
+            scope_queryset_by_venture(Sale.objects.all(), request).get(pk=pk)
         except Sale.DoesNotExist:
             return failure(message="Sale not found", status=status.HTTP_404_NOT_FOUND)
         items = SaleItem.objects.filter(sale_id=pk).select_related("product__unit")
@@ -248,9 +251,12 @@ class SaleReturnDetailView(APIView):
 
     def get(self, request, pk):
         try:
-            return_record = SaleReturn.objects.select_related(
-                "venture", "sale", "sale__customer"
-            ).prefetch_related("items").get(pk=pk)
+            return_record = scope_queryset_by_venture(
+                SaleReturn.objects.select_related(
+                    "venture", "sale", "sale__customer"
+                ).prefetch_related("items"),
+                request,
+            ).get(pk=pk)
         except SaleReturn.DoesNotExist:
             return failure(
                 message="Sale return not found", status=status.HTTP_404_NOT_FOUND

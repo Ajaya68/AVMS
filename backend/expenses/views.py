@@ -86,7 +86,9 @@ class ExpenseDetailView(APIView):
 
     def _get_expense(self, pk):
         try:
-            return Expense.objects.select_related("venture", "category").get(pk=pk)
+            return scope_queryset_by_venture(
+                Expense.objects.select_related("venture", "category"), self.request
+            ).get(pk=pk)
         except Expense.DoesNotExist:
             return None
 

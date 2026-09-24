@@ -122,7 +122,11 @@ verified end-to-end before a phase ships.
      isolation; all detail/list endpoints (core MasterDetailView + sales,
      purchases, payments, expenses, inventory movements) now scope by the
      active venture so no ID-guess can read another venture's rows. Suite: 134.
- 14. **Phase 14 - Production** (current): hardening + deployment.
+ 14. **Phase 14 - Production** (complete): env-gated hardening - pooled DB
+     connections, HTTPS/Secure-cookie + HSTS flags when `DEBUG=False` behind a
+     TLS terminator, structured console logging, gunicorn config and
+     dependency, updated `.env.example`; no production data is deployed in
+     this repo (leave to the operator's target infrastructure).
 
 ## Rules of Engagement
 

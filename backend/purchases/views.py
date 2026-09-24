@@ -97,9 +97,12 @@ class PurchaseDetailView(APIView):
 
     def _get_purchase(self, pk):
         try:
-            return Purchase.objects.select_related(
-                "venture", "supplier", "warehouse"
-            ).prefetch_related("items", "items__product__unit").get(pk=pk)
+            return scope_queryset_by_venture(
+                Purchase.objects.select_related(
+                    "venture", "supplier", "warehouse"
+                ).prefetch_related("items", "items__product__unit"),
+                self.request,
+            ).get(pk=pk)
         except Purchase.DoesNotExist:
             return None
 
@@ -165,7 +168,7 @@ class PurchaseItemsView(APIView):
 
     def get(self, request, pk):
         try:
-            Purchase.objects.get(pk=pk)
+            scope_queryset_by_venture(Purchase.objects.all(), request).get(pk=pk)
         except Purchase.DoesNotExist:
             return failure(message="Purchase not found", status=status.HTTP_404_NOT_FOUND)
         items = PurchaseItem.objects.filter(purchase_id=pk).select_related("product__unit")
@@ -252,9 +255,12 @@ class PurchaseReturnDetailView(APIView):
 
     def get(self, request, pk):
         try:
-            return_record = PurchaseReturn.objects.select_related(
-                "venture", "purchase", "purchase__supplier"
-            ).prefetch_related("items").get(pk=pk)
+            return_record = scope_queryset_by_venture(
+                PurchaseReturn.objects.select_related(
+                    "venture", "purchase", "purchase__supplier"
+                ).prefetch_related("items"),
+                request,
+            ).get(pk=pk)
         except PurchaseReturn.DoesNotExist:
             return failure(
                 message="Purchase return not found", status=status.HTTP_404_NOT_FOUND

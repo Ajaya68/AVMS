@@ -144,8 +144,11 @@ class StockMovementDetailView(APIView):
 
     def get(self, request, pk):
         try:
-            movement = StockMovement.objects.select_related(
-                "warehouse", "product", "venture"
+            movement = scope_queryset_by_venture(
+                StockMovement.objects.select_related(
+                    "warehouse", "product", "venture"
+                ),
+                request,
             ).get(pk=pk)
         except StockMovement.DoesNotExist:
             return failure(

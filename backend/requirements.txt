@@ -9,3 +9,5 @@ PyMySQL==1.2.3
 cryptography==50.0.1
 python-dotenv==1.2.3
 tzdata==2026.4
+# Production WSGI server (Linux). Windows dev: use `manage.py runserver`.
+gunicorn==23.0.0
