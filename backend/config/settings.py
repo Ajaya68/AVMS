@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     "reports.apps.ReportsConfig",
     "notifications.apps.NotificationsConfig",
     "audit.apps.AuditConfig",
+    "regression.apps.RegressionConfig",
 ]
 
 MIDDLEWARE = [

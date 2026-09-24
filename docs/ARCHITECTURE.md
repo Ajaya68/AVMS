@@ -116,8 +116,13 @@ verified end-to-end before a phase ships.
      receivables, stock value), low-stock alerts and recent-activity feed,
      live unread-notification bell in the topbar, empty/error/loading states
      across all list pages.
- 13. **Phase 13 - Testing** (current): end-to-end and regression fixes.
-14. **Phase 14 - Production**: hardening + deployment.
+13. **Phase 13 - Testing** (complete): dedicated `regression` suite (5
+     cross-module E2E scenarios) locking in the low-stock string-reorder fix,
+     notification audiences, notification ownership and detail-endpoint venture
+     isolation; all detail/list endpoints (core MasterDetailView + sales,
+     purchases, payments, expenses, inventory movements) now scope by the
+     active venture so no ID-guess can read another venture's rows. Suite: 134.
+ 14. **Phase 14 - Production** (current): hardening + deployment.
 
 ## Rules of Engagement
 

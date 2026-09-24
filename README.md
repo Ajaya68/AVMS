@@ -175,8 +175,17 @@ AVMS/
 - Topbar notification bell shows the live unread count (30s polling) and links
   to the Notifications inbox
 - Empty, error and loading states audited across all list pages
+### Phase 13 - Testing & regression fixes (complete)
+- New `regression` app: 5 end-to-end scenarios covering the low-stock
+  string-reorder crash, sale-notification audiences (managers, not plain
+  staff), notification ownership, and full purchase -> payment -> settle ->
+  over-payment-rejected flow
+- Venture isolation closed on every detail endpoint (core master CRUD, sales,
+  purchases, payments, expenses, stock movements): fetching a row by id from
+  another venture now 404s
+- Backend suite green (134 tests)
 
-Planned: Phase 13 (Testing) -> Phase 14 (Production) per `docs/ARCHITECTURE.md`.
+Planned: Phase 14 (Production) per `docs/ARCHITECTURE.md`.
 
 ## Running the Project
 
