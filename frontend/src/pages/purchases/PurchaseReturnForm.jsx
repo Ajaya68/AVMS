@@ -47,9 +47,9 @@ function PurchaseReturnForm({ preselectPurchaseId, onCancel, onSaved }) {
     setError("");
     try {
       const resp = await fetchPurchase(id);
-      const purchase = resp.data.data;
+      const purchase = resp || {};
       setLines(
-        purchase.items.map((it) => ({
+        (purchase.items || []).map((it) => ({
           product: it.product,
           product_name: it.product_name,
           product_sku: it.product_sku,

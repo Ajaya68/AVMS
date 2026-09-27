@@ -80,7 +80,6 @@ function Topbar({ onToggleSidebar }) {
               <div className="fw-semibold small">{displayName}</div>
               <small className="text-muted">{roles}</small>
             </div>
-            <i className="bi bi-chevron-down small d-none d-md-block" />
           </Dropdown.Toggle>
 
           <Dropdown.Menu>

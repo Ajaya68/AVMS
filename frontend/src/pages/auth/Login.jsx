@@ -1,16 +1,20 @@
 import { useState } from "react";
-import { Form } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { Form, InputGroup } from "react-bootstrap";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
 
 function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const resetDone = Boolean(location.state?.reset);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -23,6 +27,7 @@ function Login() {
       const detail =
         err?.response?.data?.message ||
         err?.response?.data?.detail ||
+        err?.message ||
         "Unable to sign in. Check your credentials and try again.";
       setError(detail);
     } finally {
@@ -47,6 +52,12 @@ function Login() {
               {error}
             </div>
           )}
+          {resetDone && (
+            <div className="alert alert-success py-2" role="alert">
+              Password reset successfully. You can now sign in with your new
+              password.
+            </div>
+          )}
 
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3" controlId="login-email">
@@ -61,16 +72,33 @@ function Login() {
               />
             </Form.Group>
 
-            <Form.Group className="mb-3" controlId="login-password">
+            <Form.Group className="mb-2" controlId="login-password">
               <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <InputGroup>
+                <Form.Control
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <InputGroup.Text
+                  as="button"
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword((v) => !v)}
+                >
+                  <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`} />
+                </InputGroup.Text>
+              </InputGroup>
             </Form.Group>
+
+            <div className="d-flex justify-content-end mb-3">
+              <Link to="/forgot-password" className="small text-decoration-none">
+                Forgot password?
+              </Link>
+            </div>
 
             <button
               type="submit"

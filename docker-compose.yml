@@ -1,0 +1,30 @@
+services:
+  oracle:
+    image: gvenzl/oracle-xe:21-slim
+    environment:
+      ORACLE_PASSWORD: avms
+      APP_USER: avms
+      APP_USER_PASSWORD: avms
+    ports:
+      - "1521:1521"
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+  backend:
+    build: ./backend-java
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:oracle:thin:@oracle:1521/XEPDB1
+      DB_USER: avms
+      DB_PASSWORD: avms
+      JWT_SECRET: ${JWT_SECRET:-change-me-to-a-256-bit-secret-please-change-me-123456}
+      CORS_ORIGINS: http://localhost:5173
+    depends_on:
+      - oracle
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+volumes:
+  oracle-data:

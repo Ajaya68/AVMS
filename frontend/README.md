@@ -1,16 +1,25 @@
-# React + Vite
+# AVMS Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React 19 + Vite single-page application for the Ajaya Venture Management
+System. Talks to the Spring Boot backend (`backend-java/`).
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install                        # first time only
+set VITE_API_URL=http://localhost:8081/api
+npm run dev                        # http://localhost:5174
+```
 
-## React Compiler
+- `VITE_API_URL` points at the backend API (default `http://localhost:8000/api`).
+- In dev, `/api/*` requests are proxied when no absolute URL is set.
+- Other scripts: `npm run build` (production bundle into `dist/`), `npm run lint`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Notes
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+- Auth uses JWT access/refresh tokens stored in `localStorage`
+  (`src/services/api.js`, `src/context/AuthContext.jsx`).
+- The sidebar is permission-gated (`src/utils/navItems.js`); permissions come
+  from `/api/auth/me/`.
+- The `X-Venture-Id` header (top-bar venture selector) scopes data per venture.
+- Lists refresh in place after every create/update/delete (no page reload).

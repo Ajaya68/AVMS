@@ -39,9 +39,9 @@ function SaleReturnForm({ preselectSaleId, onCancel, onSaved }) {
     setError("");
     try {
       const resp = await fetchSale(id);
-      const sale = resp.data.data;
+      const sale = resp || {};
       setLines(
-        sale.items.map((it) => ({
+        (sale.items || []).map((it) => ({
           product: it.product,
           product_name: it.product_name,
           product_sku: it.product_sku,

@@ -12,8 +12,12 @@ export async function updateUser(id, payload) {
   return api.patch(`/auth/users/${id}/`, payload);
 }
 
+export async function deleteUser(id) {
+  return api.delete(`/auth/users/${id}/`);
+}
+
 export async function fetchRoles() {
   return api.get("/auth/roles/");
 }
 
-export default { fetchUsers, createUser, updateUser, fetchRoles };
+export default { fetchUsers, createUser, updateUser, deleteUser, fetchRoles };

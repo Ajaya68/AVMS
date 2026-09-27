@@ -31,6 +31,25 @@ export async function login(email, password) {
   return data.user;
 }
 
+export async function requestPasswordReset(email) {
+  return api.post("/auth/forgot-password/", { email });
+}
+
+export async function resetPassword(uidb64, token, newPassword) {
+  return api.post("/auth/reset-password/", {
+    uidb64,
+    token,
+    new_password: newPassword,
+  });
+}
+
+export async function changePassword(currentPassword, newPassword) {
+  return api.post("/auth/change-password/", {
+    current_password: currentPassword,
+    new_password: newPassword,
+  });
+}
+
 export async function logout() {
   const refresh = getRefreshToken();
   try {
@@ -48,4 +67,14 @@ export async function fetchMe() {
   return api.get("/auth/me/");
 }
 
-export default { login, logout, fetchMe, getAccessToken, getRefreshToken, setTokens };
+export default {
+  login,
+  logout,
+  fetchMe,
+  requestPasswordReset,
+  resetPassword,
+  changePassword,
+  getAccessToken,
+  getRefreshToken,
+  setTokens,
+};

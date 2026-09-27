@@ -2,22 +2,22 @@ import { Form } from "react-bootstrap";
 
 import { useApi } from "../hooks/useApi";
 import { fetchVentures } from "../services/ventureService";
-import { getActiveVentureId, setActiveVentureId } from "../services/api";
+import { useVenture } from "../context/VentureContext";
 
 function VentureSelector() {
   const { data } = useApi(() => fetchVentures({ page_size: 100 }), []);
   const ventures =
     Array.isArray(data?.results) ? data.results : data || [];
 
-  const active = getActiveVentureId();
+  const { ventureId, setVentureId } = useVenture();
 
   return (
     <Form.Select
       size="sm"
       style={{ maxWidth: 220 }}
-      value={active}
+      value={ventureId}
       aria-label="Active venture"
-      onChange={(e) => setActiveVentureId(e.target.value || null)}
+      onChange={(e) => setVentureId(e.target.value)}
     >
       <option value="">All ventures</option>
       {ventures.map((v) => (

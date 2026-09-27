@@ -65,6 +65,15 @@ still running.
 | POST   | `/api/auth/refresh/`  | No   | `{refresh}` -> rotated `{access, refresh}`    |
 | POST   | `/api/auth/logout/`   | Yes  | `{refresh}`; blacklists the refresh token     |
 | GET    | `/api/auth/me/`       | Yes  | Current user profile, roles and capabilities  |
+| POST   | `/api/auth/forgot-password/` | No | `{email}` -> `{reset_url}` only when `DEBUG=True`; always 200 to avoid user enumeration |
+| POST   | `/api/auth/reset-password/` | No | `{uidb64, token, new_password}`; token from the reset link |
+| POST   | `/api/auth/change-password/` | Yes | `{current_password, new_password}`; signed-in user only |
+| GET    | `/api/employees/me/` | Yes | Own employee record (login link, else email match) + today + month summary |
+| GET    | `/api/attendance/` | Yes | Own records, or all with `attendance.view` (`?employee=&from=&to=&status=&venture=&department=`) |
+| POST   | `/api/attendance/` | Yes | Self check-in, or mark for any employee with `attendance.manage`; re-marking a date UPDATES (upsert, no duplicates) |
+| POST   | `/api/attendance/bulk/` | Yes | `attendance.manage` only; `{date, items:[{employee,status,remarks}]}` roster save (upsert each) |
+| PATCH  | `/api/attendance/:id/` | Yes | Own record (check-out/status/notes) or any with `attendance.manage` |
+| DELETE | `/api/attendance/:id/` | Yes | `attendance.manage` only |
 
 `login` response `user` includes `role_codes` (active role codes), `roles`
 (detail incl. `permission_codes`) and `permissions` (all granted capability

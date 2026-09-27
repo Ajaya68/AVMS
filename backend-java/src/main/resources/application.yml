@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: avms-backend
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate.jdbc.time_zone: UTC
+      hibernate.type.preferred_instant_jdbc_type: TIMESTAMP
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: 8080
+
+avms:
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173}
+  jwt:
+    secret: ${JWT_SECRET:change-me-to-a-256-bit-secret-please-change-me-123456}
+    access-minutes: ${JWT_ACCESS_MINUTES:30}
+    refresh-days: ${JWT_REFRESH_DAYS:7}
+
+springdoc:
+  api-docs:
+    path: /api/schema
+  swagger-ui:
+    path: /api/docs.html
+
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}

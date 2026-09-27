@@ -168,8 +168,12 @@ function MovementForm({ products, warehouses, onCancel, onSubmit }) {
 function StockMovementsPage() {
   const { hasPerm } = useAuth();
   const [showForm, setShowForm] = useState(false);
+  const [typeFilter, setTypeFilter] = useState("");
 
-  const { data, loading, error, refetch } = useApi(() => fetchStockMovements({}), []);
+  const { data, loading, error, refetch } = useApi(
+    () => fetchStockMovements(typeFilter ? { movement_type: typeFilter } : {}),
+    [typeFilter]
+  );
   const movements = useMemo(
     () => (Array.isArray(data?.results) ? data.results : data || []),
     [data]
@@ -210,15 +214,15 @@ function StockMovementsPage() {
           <div className="d-flex justify-content-between align-items-center">
             <InputGroup style={{ maxWidth: 260 }}>
               <InputGroup.Text><i className="bi bi-filter" /></InputGroup.Text>
-              <Form.Control
-                as="select"
-                defaultValue=""
+              <Form.Select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
               >
                 <option value="">All types</option>
                 {MOVEMENT_TYPES.map((t) => (
                   <option key={t} value={t}>{movementApiLabel(t)}</option>
                 ))}
-              </Form.Control>
+              </Form.Select>
             </InputGroup>
             <span className="text-muted small">{data?.count ?? movements.length} movement(s)</span>
           </div>

@@ -1,10 +1,10 @@
 import { createBrowserRouter, Route, createRoutesFromElements } from "react-router-dom";
-import MainLayout from "../layouts/MainLayout";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Dashboard from "../pages/dashboard/Dashboard";
 import Login from "../pages/auth/Login";
+import ForgotPassword from "../pages/auth/ForgotPassword";
+import ResetPassword from "../pages/auth/ResetPassword";
 import NotFound from "../pages/NotFound";
-import PlaceholderPage from "../pages/PlaceholderPage";
 import UsersPage from "../pages/users/UsersPage";
 import RolesPage from "../pages/roles/RolesPage";
 import VenturesPage from "../pages/ventures/VenturesPage";
@@ -24,18 +24,23 @@ import SaleReturnsPage from "../pages/sales/SaleReturnsPage";
 import PaymentsPage from "../pages/payments/PaymentsPage";
 import ExpensesPage from "../pages/expenses/ExpensesPage";
 import EmployeesPage from "../pages/employees/EmployeesPage";
+import AttendancePage from "../pages/attendance/AttendancePage";
 import ReportsPage from "../pages/reports/ReportsPage";
 import NotificationsPage from "../pages/notifications/NotificationsPage";
 import AuditLogsPage from "../pages/audit/AuditLogsPage";
+import SettingsPage from "../pages/settings/SettingsPage";
+import VentureRemount from "../components/VentureRemount";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
     <>
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route
         element={
           <ProtectedRoute>
-            <MainLayout />
+            <VentureRemount />
           </ProtectedRoute>
         }
       >
@@ -57,12 +62,13 @@ const router = createBrowserRouter(
       <Route path="payments" element={<PaymentsPage />} />
       <Route path="expenses" element={<ExpensesPage />} />
       <Route path="employees" element={<EmployeesPage />} />
+      <Route path="attendance" element={<AttendancePage />} />
       <Route path="reports" element={<ReportsPage />} />
       <Route path="users" element={<UsersPage />} />
       <Route path="roles" element={<RolesPage />} />
       <Route path="notifications" element={<NotificationsPage />} />
       <Route path="audit-logs" element={<AuditLogsPage />} />
-      <Route path="settings" element={<PlaceholderPage />} />
+      <Route path="settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </>

@@ -10,6 +10,14 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       port: 5173,
+      // Explicit HMR channel so file saves push updates to the browser
+      // automatically (no manual refresh). Uses a plain ws:// connection
+      // on the same port as the dev server.
+      hmr: {
+        host: "localhost",
+        port: 5173,
+        protocol: "ws",
+      },
       proxy: {
         // In dev, /api requests are forwarded to Django so the browser
         // never needs to deal with CORS.

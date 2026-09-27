@@ -51,6 +51,7 @@ const NAV = [
     section: "Management",
     items: [
       { label: "Employees", path: "/employees", icon: "bi-person-badge", perm: "employees.view" },
+      { label: "Attendance", path: "/attendance", icon: "bi-calendar-check", perm: "dashboard.view" },
       { label: "Reports", path: "/reports", icon: "bi-graph-up", perm: "reports.view" },
     ],
   },

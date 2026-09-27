@@ -77,6 +77,9 @@ function MasterEntityForm({
           const isVenture = field.type === "venture";
           const isSelect = field.type === "select";
           const isTextarea = field.type === "textarea";
+          // "datalist" renders a text input with dropdown suggestions while
+          // still allowing free-form values (used for department/designation).
+          const isDatalist = field.type === "datalist";
 const options = isVenture
     ? ventureOptions.map((v) => ({
         value: v.id,
@@ -100,6 +103,26 @@ const options = isVenture
                       </option>
                     ))}
                   </Form.Select>
+                ) : isDatalist ? (
+                  <>
+                    <Form.Control
+                      type="text"
+                      list={`${field.name}-suggestions`}
+                      value={values[field.name] ?? ""}
+                      onChange={set(field.name)}
+                      required={field.required}
+                      placeholder="Select or type..."
+                      autoComplete="off"
+                    />
+                    <datalist id={`${field.name}-suggestions`}>
+                      {(field.options || []).map((opt) => (
+                        <option
+                          key={typeof opt === "string" ? opt : opt.value}
+                          value={typeof opt === "string" ? opt : opt.value}
+                        />
+                      ))}
+                    </datalist>
+                  </>
                 ) : (
                   <Form.Control
                     as={isTextarea ? "textarea" : "input"}
@@ -159,15 +182,20 @@ function MasterEntityPage({
   initialValues,
   lookups,
   searchPlaceholder = "Search...",
+  cardRender,
+  // Extra query params merged into every list fetch (e.g. { department }).
+  baseParams,
 }) {
   const { hasPerm } = useAuth();
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
 
+  const baseKey = JSON.stringify(baseParams || {});
   const { data, loading, error, refetch } = useApi(
-    () => service.fetch({ search: search || undefined }),
-    [search]
+    () => service.fetch({ search: search || undefined, ...(baseParams || {}) }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [search, baseKey]
   );
 
   const list = useMemo(
@@ -191,6 +219,17 @@ function MasterEntityPage({
       await service.remove(row.id);
       await refetch();
     }
+  };
+
+  const openEdit = (row) => {
+    setEditing(row);
+    setShowForm(true);
+  };
+
+  const cardActions = {
+    onEdit: openEdit,
+    onDelete: handleDelete,
+    canManage,
   };
 
   return (
@@ -232,6 +271,16 @@ function MasterEntityPage({
             <Alert variant="danger" className="mb-0">
               Unable to load {title.toLowerCase()}.
             </Alert>
+          ) : cardRender ? (
+            list.length === 0 ? (
+              <div className="text-center text-muted py-4">
+                No {title.toLowerCase()} found.
+              </div>
+            ) : (
+              <Row className="g-3">
+                {list.map((row) => cardRender(row, cardActions))}
+              </Row>
+            )
           ) : (
             <Table hover responsive className="mb-0">
               <thead>
@@ -257,7 +306,7 @@ function MasterEntityPage({
                             size="sm"
                             variant="outline-secondary"
                             className="me-2"
-                            onClick={() => { setEditing(row); setShowForm(true); }}
+                            onClick={() => openEdit(row)}
                           >
                             <i className="bi bi-pencil" />
                           </Button>

@@ -29,13 +29,15 @@ export default function AuditLogsPage() {
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
 
-  async function load() {
+  const PER_PAGE = 20;
+
+  async function load(nextPage = 1) {
     setLoading(true);
     setError("");
     try {
-      const params = { page_size: 100, ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== "")) };
+      const params = { page: nextPage, page_size: PER_PAGE, ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== "")) };
       setData(await fetchAuditLogs(params));
-      setPage(1);
+      setPage(nextPage);
     } catch (e) {
       setError(e?.response?.data?.message || "Failed to load audit logs");
     } finally {
@@ -43,11 +45,9 @@ export default function AuditLogsPage() {
     }
   }
 
-  const all = data?.results || [];
-  const perPage = 25;
-  const totalPages = Math.max(Math.ceil(all.length / perPage), 1);
+  const results = data?.results || [];
+  const totalPages = Math.max(Math.ceil((data?.count || 0) / PER_PAGE), 1);
   const current = Math.min(page, totalPages);
-  const results = all.slice((current - 1) * perPage, current * perPage);
 
   useEffect(() => {
     load();
@@ -103,7 +103,7 @@ export default function AuditLogsPage() {
             />
           </Col>
           <Col md={2}>
-            <Button variant="primary" disabled={loading} onClick={load} className="w-100">
+            <Button variant="primary" disabled={loading} onClick={() => load(1)} className="w-100">
               Apply
             </Button>
           </Col>
@@ -147,13 +147,13 @@ export default function AuditLogsPage() {
             </Table>
             {totalPages > 1 && (
               <Pagination size="sm">
-                <Pagination.Prev disabled={current <= 1} onClick={() => setPage(current - 1)} />
+                <Pagination.Prev disabled={current <= 1} onClick={() => load(current - 1)} />
                 {[...Array(totalPages)].slice(0, 10).map((_, i) => (
-                  <Pagination.Item key={i + 1} active={current === i + 1} onClick={() => setPage(i + 1)}>
+                  <Pagination.Item key={i + 1} active={current === i + 1} onClick={() => load(i + 1)}>
                     {i + 1}
                   </Pagination.Item>
                 ))}
-                <Pagination.Next disabled={current >= totalPages} onClick={() => setPage(current + 1)} />
+                <Pagination.Next disabled={current >= totalPages} onClick={() => load(current + 1)} />
               </Pagination>
             )}
           </>

@@ -19,7 +19,7 @@ function formatDate(value) {
 }
 
 export default function NotificationsPage() {
-  const { data, loading, error, refresh } = useApi(
+  const { data, loading, error, refetch } = useApi(
     () => fetchNotifications({ unread_first: true }),
     []
   );
@@ -28,10 +28,10 @@ export default function NotificationsPage() {
 
   const markRead = useCallback(
     (id) => {
-      markNotificationRead(id).then(refresh);
+      markNotificationRead(id).then(refetch);
       setViewing(null);
     },
-    [refresh]
+    [refetch]
   );
 
   const results = data?.results || [];
@@ -46,7 +46,7 @@ export default function NotificationsPage() {
           )}
         </span>
         {data && data.count > 0 && (
-          <Button size="sm" variant="outline-primary" onClick={() => markAllNotificationsRead().then(refresh)}>
+          <Button size="sm" variant="outline-primary" onClick={() => markAllNotificationsRead().then(refetch)}>
             Mark all read
           </Button>
         )}

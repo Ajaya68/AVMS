@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Button, Card, Col, Form, Row, Tab, Table, Tabs } from "react-bootstrap";
 
 import LoadingSpinner from "../../components/LoadingSpinner";
-import { getActiveVentureId } from "../../services/api";
 import {
   fetchFinancialReport,
   fetchInventoryReport,
@@ -51,8 +50,14 @@ function useReport(fetchFn) {
     setLoading(true);
     setError("");
     try {
-      const venture = getActiveVentureId();
-      setData(await fetchFn({ venture, from, to, ...params }));
+      // Only send date filters when set: the backend defaults an absent
+      // param to the last 30 days, but an empty string would override the
+      // default with an invalid date. Venture scope travels via the
+      // X-Venture-Id header, not a query param.
+      const query = { ...params };
+      if (from) query.from = from;
+      if (to) query.to = to;
+      setData(await fetchFn(query));
     } catch (e) {
       setError(e?.response?.data?.message || "Failed to load report");
     } finally {
@@ -65,10 +70,10 @@ function useReport(fetchFn) {
 
 function SalesTab() {
   const { loading, error, data, load, from, to, setFrom, setTo } = useReport(fetchSalesReport);
-  const [loaded, setLoaded] = useState(false);
-  if (!loaded) {
-    load().finally(() => setLoaded(true));
-  }
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <ReportBody title="Sales report" loading={loading} error={error} onLoad={load} variant="primary" from={from} to={to} setFrom={setFrom} setTo={setTo}>
       {data && (
@@ -101,10 +106,10 @@ function SalesTab() {
 
 function PurchasesTab() {
   const { loading, error, data, load, from, to, setFrom, setTo } = useReport(fetchPurchasesReport);
-  const [loaded, setLoaded] = useState(false);
-  if (!loaded) {
-    load().finally(() => setLoaded(true));
-  }
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <ReportBody title="Purchases report" loading={loading} error={error} onLoad={load} variant="success" from={from} to={to} setFrom={setFrom} setTo={setTo}>
       {data && (
@@ -136,10 +141,10 @@ function PurchasesTab() {
 
 function InventoryTab() {
   const { loading, error, data, load, from, to, setFrom, setTo } = useReport(fetchInventoryReport);
-  const [loaded, setLoaded] = useState(false);
-  if (!loaded) {
-    load().finally(() => setLoaded(true));
-  }
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <ReportBody title="Inventory report" loading={loading} error={error} onLoad={load} variant="info" from={from} to={to} setFrom={setFrom} setTo={setTo}>
       {data && (
@@ -185,10 +190,10 @@ function InventoryTab() {
 
 function FinancialTab() {
   const { loading, error, data, load, from, to, setFrom, setTo } = useReport(fetchFinancialReport);
-  const [loaded, setLoaded] = useState(false);
-  if (!loaded) {
-    load().finally(() => setLoaded(true));
-  }
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <ReportBody title="Financial report" loading={loading} error={error} onLoad={load} variant="success" from={from} to={to} setFrom={setFrom} setTo={setTo}>
       {data && (

@@ -9,12 +9,18 @@ import {
   InputGroup,
   Modal,
   Row,
-  Table,
 } from "react-bootstrap";
 
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { useApi } from "../../hooks/useApi";
-import { createUser, fetchRoles, fetchUsers, updateUser } from "../../services/userService";
+import { useAuth } from "../../context/AuthContext";
+import {
+  createUser,
+  deleteUser,
+  fetchRoles,
+  fetchUsers,
+  updateUser,
+} from "../../services/userService";
 
 function UserForm({ initial, roles, onSubmit, onCancel }) {
   const [email, setEmail] = useState(initial?.email ?? "");
@@ -139,6 +145,7 @@ function UsersPage() {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState(null);
+  const { user: me } = useAuth();
 
   const {
     data,
@@ -154,6 +161,22 @@ function UsersPage() {
     await updateUser(user.id, { is_active: !user.is_active });
     await refetch();
   };
+
+  const handleDelete = async (user) => {
+    if (
+      !window.confirm(
+        `Delete user ${user.email}? They will immediately lose access. This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+    await deleteUser(user.id);
+    await refetch();
+  };
+
+  // Admin/superuser accounts are never deletable (backend enforces this
+  // too): no delete button on their cards. Nobody may delete themselves.
+  const canDelete = (user) => !user.is_superuser && user.id !== me?.id;
 
   return (
     <div>
@@ -194,69 +217,104 @@ function UsersPage() {
             <Alert variant="danger" className="mb-0">
               Unable to load users. Check that the backend is running.
             </Alert>
+          ) : list.length === 0 ? (
+            <div className="text-center text-muted py-4">No users found.</div>
           ) : (
-            <Table hover responsive className="mb-0">
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Contact</th>
-                  <th>Roles</th>
-                  <th>Status</th>
-                  <th className="text-end">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.map((user) => (
-                  <tr key={user.id}>
-                    <td>
-                      <div className="fw-semibold">{user.full_name || "—"}</div>
-                      <small className="text-muted">{user.email}</small>
-                    </td>
-                    <td className="text-muted">{user.phone || "—"}</td>
-                    <td>
-                      {user.roles?.length ? (
-                        user.roles.map((r) => (
-                          <Badge key={r.id} bg="light" text="dark" className="me-1">
-                            {r.name}
+            <Row className="g-3">
+              {list.map((user) => {
+                const displayName = user.full_name || user.email;
+                const initials = displayName
+                  .split(/[\s@._-]+/)
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((w) => w.charAt(0).toUpperCase())
+                  .join("");
+                return (
+                  <Col xs={12} sm={6} xl={4} key={user.id}>
+                    <Card className="shadow-sm h-100 overflow-hidden">
+                      <div
+                        className="position-relative"
+                        style={{
+                          height: 72,
+                          background: user.is_superuser
+                            ? "linear-gradient(135deg, #dc2626, #7c2d12)"
+                            : "linear-gradient(135deg, #0ea5e9, #6366f1)",
+                        }}
+                      >
+                        <span className="position-absolute top-0 end-0 m-2">
+                          <Badge bg={user.is_active ? "success" : "secondary"}>
+                            {user.is_active ? "Active" : "Inactive"}
                           </Badge>
-                        ))
-                      ) : (
-                        <span className="text-muted">—</span>
-                      )}
-                    </td>
-                    <td>
-                      <Badge bg={user.is_active ? "success" : "secondary"}>
-                        {user.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </td>
-                    <td className="text-end">
-                      <Button
-                        size="sm"
-                        variant="outline-secondary"
-                        onClick={() => setEditing(user)}
-                        className="me-2"
-                      >
-                        <i className="bi bi-pencil" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={user.is_active ? "outline-danger" : "outline-success"}
-                        onClick={() => toggleActive(user)}
-                      >
-                        {user.is_active ? "Deactivate" : "Activate"}
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-                {list.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="text-center text-muted py-4">
-                      No users found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
+                        </span>
+                        {user.is_superuser && (
+                          <span className="position-absolute top-0 start-0 m-2 badge bg-dark bg-opacity-50">
+                            <i className="bi bi-shield-lock me-1" />
+                            SUPERUSER
+                          </span>
+                        )}
+                      </div>
+                      <Card.Body className="pt-0">
+                        <div
+                          className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold border border-3 border-white shadow-sm"
+                          style={{ width: 52, height: 52, fontSize: "1.15rem", marginTop: -26 }}
+                        >
+                          {initials}
+                        </div>
+                        <div className="fw-semibold fs-5 mt-2 text-truncate">{displayName}</div>
+                        <div className="text-muted small mb-2 text-truncate">{user.email}</div>
+                        <div className="mb-2">
+                          {user.roles?.length ? (
+                            user.roles.map((r) => (
+                              <Badge key={r.id} bg="light" text="dark" className="me-1 mb-1">
+                                {r.name}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-muted small">No roles assigned</span>
+                          )}
+                        </div>
+                        {user.phone && (
+                          <div className="small text-muted">
+                            <i className="bi bi-telephone me-1" />
+                            {user.phone}
+                          </div>
+                        )}
+                      </Card.Body>
+                      <Card.Footer className="bg-white d-flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline-secondary"
+                          className="flex-fill"
+                          onClick={() => setEditing(user)}
+                        >
+                          <i className="bi bi-pencil me-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={user.is_active ? "outline-warning" : "outline-success"}
+                          className="flex-fill"
+                          onClick={() => toggleActive(user)}
+                        >
+                          {user.is_active ? "Deactivate" : "Activate"}
+                        </Button>
+                        {canDelete(user) && (
+                          <Button
+                            size="sm"
+                            variant="outline-danger"
+                            className="flex-fill"
+                            onClick={() => handleDelete(user)}
+                          >
+                            <i className="bi bi-trash me-1" />
+                            Delete
+                          </Button>
+                        )}
+                      </Card.Footer>
+                    </Card>
+                  </Col>
+                );
+              })}
+            </Row>
           )}
         </Card.Body>
       </Card>
