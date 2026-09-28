@@ -1,3 +1,12 @@
+# Java / Maven / Spring Boot
+target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/
+mvnw.cmd.bak
+
 # Python / Django
 venv/
 .venv/
