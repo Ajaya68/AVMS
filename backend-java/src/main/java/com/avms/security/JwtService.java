@@ -26,6 +26,11 @@ public class JwtService {
     if (bytes.length < 32) {
       throw new IllegalStateException("avms.jwt.secret must be at least 256 bits (32 chars)");
     }
+    String lowered = secret.toLowerCase();
+    if (lowered.contains("change-me") || lowered.contains("please-change")) {
+      throw new IllegalStateException(
+          "avms.jwt.secret is still the placeholder value; set JWT_SECRET to a random 32+ char secret");
+    }
     this.key = Keys.hmacShaKeyFor(bytes);
     this.accessMinutes = accessMinutes;
     this.refreshDays = refreshDays;

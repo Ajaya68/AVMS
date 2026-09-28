@@ -18,7 +18,7 @@ services:
       DB_URL: jdbc:oracle:thin:@oracle:1521/XEPDB1
       DB_USER: avms
       DB_PASSWORD: avms
-      JWT_SECRET: ${JWT_SECRET:-change-me-to-a-256-bit-secret-please-change-me-123456}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-insecure-secret-do-not-use-in-prod-0123456789}
       CORS_ORIGINS: http://localhost:5173
     depends_on:
       - oracle

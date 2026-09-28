@@ -9,3 +9,15 @@ spring:
       ddl-auto: create-drop
   flyway:
     enabled: false
+
+# Tests don't need docs; keep disabled (prod default).
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# Test-only signing key. Never use in dev/prod; prod requires a real JWT_SECRET.
+avms:
+  jwt:
+    secret: test-only-jwt-secret-for-h2-suite-do-not-use-elsewhere-1234

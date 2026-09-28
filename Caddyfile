@@ -7,17 +7,23 @@
 {$DOMAIN} {
   encode gzip
 
+  # Hardening headers on all responses (TLS + HSTS via Caddy's auto-HTTPS).
+  header {
+    X-Frame-Options "DENY"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "same-origin"
+    Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    -Server
+  }
+
   handle /api/* {
     reverse_proxy backend:8080
   }
 
-  handle /v3/api-docs/* {
-    reverse_proxy backend:8080
-  }
-
-  handle /swagger-ui* {
-    reverse_proxy backend:8080
-  }
+  # NOTE: /v3/api-docs/* and /swagger-ui* are intentionally NOT proxied.
+  # API docs are disabled in prod (SPRINGDOC_ENABLED defaults false);
+  # enable only for local dev via application-dev.yml, never publicly.
 
   handle {
     reverse_proxy frontend:80

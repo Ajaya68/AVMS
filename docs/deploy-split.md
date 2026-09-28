@@ -57,7 +57,7 @@ Render free sleeps after 15 min idle — first request takes ~50s to wake. Paid 
 ## 4. Verify live
 
 - `https://<vercel>.vercel.app/login` → login works, no CORS error in DevTools.
-- `https://<render>.onrender.com/api/docs.html` → Swagger UI.
+- `https://<render>.onrender.com/api/docs.html` → 404 in prod by design (API docs are dev-only; enable locally via `SPRINGDOC_ENABLED=true`).
 - Create a venture → product → purchase → sale to confirm DB writes.
 
 ## Troubleshooting

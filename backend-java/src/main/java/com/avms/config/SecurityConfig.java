@@ -38,6 +38,11 @@ public class SecurityConfig {
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http.csrf(csrf -> csrf.disable())
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .headers(headers -> headers
+            .frameOptions(frame -> frame.deny())
+            .contentSecurityPolicy(csp -> csp.policyDirectives("frame-ancestors 'none'"))
+            .referrerPolicy(referrer -> referrer.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.SAME_ORIGIN))
+            .permissionsPolicyHeader(permissions -> permissions.policy("camera=(), microphone=(), geolocation=()")))
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .exceptionHandling(
             e ->
@@ -62,6 +67,8 @@ public class SecurityConfig {
                         "/api/auth/login/",
                         "/api/auth/refresh",
                         "/api/auth/refresh/",
+                        "/api/auth/logout",
+                        "/api/auth/logout/",
                         "/api/auth/forgot-password",
                         "/api/auth/forgot-password/",
                         "/api/auth/reset-password",
@@ -84,7 +91,14 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration config = new CorsConfiguration();
-    config.setAllowedOrigins(List.of(allowedOrigins.split(",")));
+    List<String> origins = java.util.Arrays.stream(allowedOrigins.split(","))
+        .map(String::trim)
+        .filter(s -> !s.isEmpty())
+        .toList();
+    if (origins.contains("*")) {
+      throw new IllegalStateException("CORS allowed-origins must not be '*' when allowCredentials is true; set explicit origins");
+    }
+    config.setAllowedOrigins(origins);
     config.setAllowedMethods(List.of("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"));
     config.setAllowedHeaders(List.of("authorization", "content-type", "x-venture-id"));
     config.setAllowCredentials(true);

@@ -5,3 +5,10 @@ spring:
     password: ${DB_PASSWORD:avms}
     hikari:
       maximum-pool-size: 10
+
+# Dev-only: API docs UI. Prod default is disabled (see application.yml).
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

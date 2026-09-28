@@ -72,6 +72,9 @@ public class AuthService {
     RefreshToken stored = refreshTokens.findByJti(jti)
         .orElseThrow(() -> new ResourceNotFoundException("Invalid refresh token."));
     if (stored.isRevoked() || stored.getExpiresAt().isBefore(Instant.now())) {
+      // Possible token replay (stolen refresh reused after rotation/expiry):
+      // revoke all sessions for this user so the attacker-held tokens die too.
+      revokeAllForUser(stored.getUserEmail());
       throw new ResourceNotFoundException("Invalid refresh token.");
     }
     AccountsUser user = users.findByEmailIgnoreCase(stored.getUserEmail())
@@ -124,8 +127,16 @@ public class AuthService {
         Boolean.TRUE.equals(user.getIsSuperuser()), user.roleCodes(), user.permissionCodes());
   }
 
-  private boolean matches(String raw, String hash) {
-    if (hash != null && hash.startsWith("pbkdf2_sha256$")) {
+  private void revokeAllForUser(String email) {
+    try {
+      var tokens = refreshTokens.findByUserEmailIgnoreCase(email);
+      tokens.forEach(t -> t.setRevoked(true));
+      refreshTokens.saveAll(tokens);
+    } catch (Exception ignored) {
+    }
+  }
+
+  private boolean matches(String raw, String hash) {    if (hash != null && hash.startsWith("pbkdf2_sha256$")) {
       return verifyPbkdf2(raw, hash);
     }
     try {

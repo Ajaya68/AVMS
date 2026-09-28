@@ -28,8 +28,10 @@ avms:
 springdoc:
   api-docs:
     path: /api/schema
+    enabled: ${SPRINGDOC_ENABLED:false}
   swagger-ui:
     path: /api/docs.html
+    enabled: ${SPRINGDOC_ENABLED:false}
 
 logging:
   level:

@@ -51,7 +51,7 @@ Oracle first boot takes 2–5 min (`service_healthy`), backend runs migrations a
 
 - `https://YOUR-DOMAIN/` → login page
 - `https://YOUR-DOMAIN/api/health/` → `{"success":true,"data":{"status":"ok"...}}`
-- `https://YOUR-DOMAIN/api/docs.html` → Swagger UI
+- `https://YOUR-DOMAIN/api/docs.html` → 404 in prod by design (API docs are dev-only; run locally with the dev profile to use them)
 - Login → create venture → product → purchase → sale (confirms DB writes)
 
 ## 5. Operate
