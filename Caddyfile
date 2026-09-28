@@ -1,0 +1,25 @@
+# Caddy reverse proxy for single-VPS deploy.
+# DOMAIN is read from .env.prod (e.g. avms.example.com).
+# - https://DOMAIN/       -> frontend (React SPA)
+# - https://DOMAIN/api/*  -> backend (Spring Boot)
+# Caddy provisions + renews Let's Encrypt certs automatically.
+
+{$DOMAIN} {
+  encode gzip
+
+  handle /api/* {
+    reverse_proxy backend:8080
+  }
+
+  handle /v3/api-docs/* {
+    reverse_proxy backend:8080
+  }
+
+  handle /swagger-ui* {
+    reverse_proxy backend:8080
+  }
+
+  handle {
+    reverse_proxy frontend:80
+  }
+}

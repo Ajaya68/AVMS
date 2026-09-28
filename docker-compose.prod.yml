@@ -1,0 +1,76 @@
+# Single-VPS production stack: Oracle XE + backend + frontend + Caddy (auto HTTPS).
+# Usage:
+#   cp .env.prod.example .env.prod
+#   # edit .env.prod (DOMAIN, passwords, JWT_SECRET)
+#   docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
+#
+# Requires in .env.prod: DOMAIN, ORACLE_PASSWORD, APP_USER_PASSWORD,
+# DB_PASSWORD, JWT_SECRET, VITE_API_URL (usually https://${DOMAIN}/api).
+
+services:
+  oracle:
+    image: gvenzl/oracle-xe:21-slim
+    restart: unless-stopped
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD:?set ORACLE_PASSWORD in .env.prod}
+      APP_USER: avms
+      APP_USER_PASSWORD: ${APP_USER_PASSWORD:?set APP_USER_PASSWORD in .env.prod}
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD-SHELL", "sqlplus -L avms/${APP_USER_PASSWORD}@XEPDB1 <<< 'select 1 from dual;' | grep -q 1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+
+  backend:
+    build: ./backend-java
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:oracle:thin:@oracle:1521/XEPDB1
+      DB_USER: avms
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env.prod}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET (32+ chars) in .env.prod}
+      JWT_ACCESS_MINUTES: ${JWT_ACCESS_MINUTES:-30}
+      JWT_REFRESH_DAYS: ${JWT_REFRESH_DAYS:-7}
+      CORS_ORIGINS: https://${DOMAIN:?set DOMAIN in .env.prod}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      oracle:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/health/ | grep -q '\"status\":\"ok\"' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:?set VITE_API_URL=https://DOMAIN/api in .env.prod}
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  oracle-data:
+  caddy-data:
+  caddy-config:
