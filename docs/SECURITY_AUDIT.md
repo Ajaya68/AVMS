@@ -79,7 +79,22 @@ every fix verified by a real run (no invented results).
 - `vercel.json` JSON-parse check: OK. `docker-compose.prod.yml` config check:
   valid (earlier pass).
 
-## 5. Residual risk statement
+## 5. Secrets sweep + continuous scanning (2026-09-28)
+
+Full-repo sweep (source, config, tests, seeds, docs, CI, tracked files, all 21
+commits, built frontend bundle): **no live secrets found**. No API keys,
+tokens, private keys, cloud credentials, live connection strings, `.env`
+files (none exist, none ever committed), bundle secrets, logs, or screenshots.
+Test credentials are H2-suite fixtures only; seed SQL carries no credentials;
+dev defaults are labeled dev-only with fail-fast guards in prod paths, so
+nothing required moving — all secret consumption was already env-driven.
+
+Scanning added to keep it that way: `.gitleaks.toml` (default rules, with
+allowlists strictly limited to labeled placeholders/dev-only/test fixtures)
+plus `.github/workflows/secret-scan.yml` (Gitleaks on every push and PR).
+Secret values are never reproduced in reports.
+
+## 6. Residual risk statement
 
 After this pass: no boot-with-known-secret, no public API docs in prod,
 hardened transport headers on all four layers, CORS fail-closed, logout

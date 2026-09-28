@@ -1,0 +1,27 @@
+# AVMS secret-scanning policy (gitleaks).
+# Default rules enabled; allowlists cover ONLY values that are provably
+# non-live: labeled placeholders, dev-only defaults, and test fixtures.
+# Real secrets live exclusively in environment variables / vaults and must
+# never be committed. See docs/SECURITY_AUDIT.md.
+
+title = "AVMS secret-scanning policy"
+
+[extend]
+useDefault = true
+
+[[allowlist]]
+description = "labeled placeholders and dev-only defaults (fail-fast or local-dev only)"
+regexes = [
+  '''change-me[^"'\n]*''',
+  '''dev-only-insecure-secret[^"'\n]*''',
+  '''test-only-jwt-secret[^"'\n]*''',
+]
+
+[[allowlist]]
+description = "test-only fixture identity used with H2 suite (no prod account exists)"
+paths = [
+  '''backend-java/src/test/.*''',
+]
+regexes = [
+  '''(?i)admin@avms\.local''',
+]
