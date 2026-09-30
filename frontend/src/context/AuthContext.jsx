@@ -58,6 +58,11 @@ export function AuthProvider({ children }) {
         setChecked(true);
         return loggedInUser;
       },
+      refresh: async () => {
+        const me = await authService.fetchMe();
+        setUser(me);
+        return me;
+      },
       logout: async () => {
         await authService.logout();
         setUser(null);

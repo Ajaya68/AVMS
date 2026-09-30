@@ -46,6 +46,42 @@ public class GlobalExceptionHandler {
     return ResponseEntity.badRequest().body(new Failure(false, ex.getMessage(), Map.of()));
   }
 
+  // Framework request-binding failures: never echo ex.getMessage() — Spring's
+  // messages embed Java type names, rejected values, and paths. Return fixed
+  // generic bodies so clients (and prod) can never see internals.
+  @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+  public ResponseEntity<Failure> malformed(
+      org.springframework.http.converter.HttpMessageNotReadableException ex) {
+    return ResponseEntity.badRequest().body(new Failure(false, "Malformed request.", Map.of()));
+  }
+
+  @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<Failure> typeMismatch(
+      org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex) {
+    return ResponseEntity.badRequest().body(new Failure(false, "Invalid request parameter.", Map.of()));
+  }
+
+  @ExceptionHandler({org.springframework.web.bind.MissingServletRequestParameterException.class,
+      org.springframework.web.bind.MissingPathVariableException.class,
+      jakarta.validation.ConstraintViolationException.class})
+  public ResponseEntity<Failure> missingParam(Exception ex) {
+    return ResponseEntity.badRequest().body(new Failure(false, "Validation failed.", Map.of()));
+  }
+
+  @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+  public ResponseEntity<Failure> methodNotAllowed(
+      org.springframework.web.HttpRequestMethodNotSupportedException ex) {
+    return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+        .body(new Failure(false, "Method not allowed.", Map.of()));
+  }
+
+  @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+  public ResponseEntity<Failure> uploadTooLarge(
+      org.springframework.web.multipart.MaxUploadSizeExceededException ex) {
+    return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+        .body(new Failure(false, "Uploaded content exceeds the allowed size.", Map.of()));
+  }
+
   @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
   public ResponseEntity<Failure> noResource(org.springframework.web.servlet.resource.NoResourceFoundException ex) {
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Failure(false, "Not found.", Map.of()));

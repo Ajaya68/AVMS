@@ -27,9 +27,7 @@ function UserForm({ initial, roles, onSubmit, onCancel }) {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState(initial?.full_name ?? "");
   const [phone, setPhone] = useState(initial?.phone ?? "");
-  const [roleIds, setRoleIds] = useState(
-    initial?.roles?.map((r) => r.id) ?? []
-  );
+  const [roleCodes, setRoleCodes] = useState(initial?.role_codes ?? []);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -42,7 +40,7 @@ function UserForm({ initial, roles, onSubmit, onCancel }) {
         email,
         full_name: fullName,
         phone,
-        roles: roleIds,
+        roles: roleCodes,
         ...(initial ? {} : { password }),
       });
     } catch (err) {
@@ -112,16 +110,16 @@ function UserForm({ initial, roles, onSubmit, onCancel }) {
         <div>
           {roles.map((role) => (
             <Form.Check
-              key={role.id}
+              key={role.code}
               type="checkbox"
               inline
               label={role.name}
-              checked={roleIds.includes(role.id)}
+              checked={roleCodes.includes(role.code)}
               onChange={(e) => {
                 if (e.target.checked) {
-                  setRoleIds((ids) => [...ids, role.id]);
+                  setRoleCodes((codes) => [...codes, role.code]);
                 } else {
-                  setRoleIds((ids) => ids.filter((id) => id !== role.id));
+                  setRoleCodes((codes) => codes.filter((code) => code !== role.code));
                 }
               }}
             />
@@ -145,7 +143,7 @@ function UsersPage() {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState(null);
-  const { user: me } = useAuth();
+  const { user: me, refresh: refreshMe } = useAuth();
 
   const {
     data,
@@ -156,6 +154,9 @@ function UsersPage() {
   const { data: roles, error: rolesError } = useApi(() => fetchRoles(), []);
 
   const list = Array.isArray(data?.results) ? data.results : data || [];
+  const roleNames = Object.fromEntries(
+    (roles || []).map((r) => [r.code, r.name])
+  );
 
   const toggleActive = async (user) => {
     await updateUser(user.id, { is_active: !user.is_active });
@@ -263,10 +264,10 @@ function UsersPage() {
                         <div className="fw-semibold fs-5 mt-2 text-truncate">{displayName}</div>
                         <div className="text-muted small mb-2 text-truncate">{user.email}</div>
                         <div className="mb-2">
-                          {user.roles?.length ? (
-                            user.roles.map((r) => (
-                              <Badge key={r.id} bg="light" text="dark" className="me-1 mb-1">
-                                {r.name}
+                          {user.role_codes?.length ? (
+                            user.role_codes.map((code) => (
+                              <Badge key={code} bg="light" text="dark" className="me-1 mb-1">
+                                {roleNames[code] || code}
                               </Badge>
                             ))
                           ) : (
@@ -332,6 +333,11 @@ function UsersPage() {
             onSubmit={async (payload) => {
               if (editing) {
                 await updateUser(editing.id, payload);
+                // Editing your own account changes your permissions: reload
+                // the session so menus and route guards update immediately.
+                if (editing.id === me?.id) {
+                  await refreshMe();
+                }
               } else {
                 await createUser(payload);
               }

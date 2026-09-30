@@ -4,6 +4,31 @@ Multi-venture business management system for Ajaya Ventures. Run all your
 businesses — Mushroom, Fish Farming, Agriculture, Poultry, Dairy and more —
 from one centralized application.
 
+## Screenshots
+
+### Dashboard — live KPIs, low-stock alerts, recent activity
+
+![AVMS Dashboard](ScreenShots/dashboard.png)
+
+### Masters — ventures, customers, suppliers, products, categories, units
+
+![Ventures](ScreenShots/ventures.png)
+![Customers](ScreenShots/customers.png)
+![Suppliers](ScreenShots/suppliers.png)
+![Products](ScreenShots/products.png)
+![Categories](ScreenShots/categories.png)
+![Units](ScreenShots/units.png)
+
+### Inventory — warehouses, live stock, stock movements
+
+![Warehouses](ScreenShots/warehouses.png)
+![Inventory](ScreenShots/inventory.png)
+![Stock Movements](ScreenShots/stock-movements.png)
+
+### Reports — sales, purchases, inventory and financial reports
+
+![Sales Report](ScreenShots/reports.png)
+
 ## Features
 
 | Area          | What you can do                                                                 |

@@ -1,6 +1,11 @@
 spring:
   application:
     name: avms-backend
+  data:
+    web:
+      pageable:
+        default-page-size: 20
+        max-page-size: 100
   jackson:
     property-naming-strategy: SNAKE_CASE
   jpa:
@@ -13,9 +18,35 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  # Upload hardening baseline: no upload endpoint exists today (verified 2026-09-28:
+  # no MultipartFile/@RequestPart/multipart config, no <input type=file>/FormData,
+  # no file/image/PDF parser deps). These tight global caps are defense-in-depth so
+  # any future upload flow fails closed on resource exhaustion before reaching code.
+  # Future upload endpoints MUST additionally enforce, per flow: auth + venture scope
+  # (PermEvaluator + VentureScopeFilter), size + MIME allowlist (sniffed, not
+  # client-supplied) + extension allowlist, executable/double-extension deny
+  # (.jar/.sh/.exe/.bat/.js/.html/.svg etc.), sanitized UUID-generated filenames,
+  # normalized storage path contained in an isolated dir outside the web root (or
+  # object storage), no public serving unless explicitly intended, and bounded
+  # image/document parsing (dimensions/pages/timeouts) to cap parser/resource risk.
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 5MB
+      file-size-threshold: 64KB
+      location: ${java.io.tmpdir}
 
 server:
   port: ${PORT:8080}
+  # Error-disclosure fail-closed: never render framework message/stacktrace/
+  # binding-error diagnostics into responses. All API errors use the generic
+  # {success:false,message,errors} envelope from GlobalExceptionHandler; the
+  # container error page stays empty even for requests that never reach MVC.
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
 
 avms:
   cors:
@@ -24,6 +55,12 @@ avms:
     secret: ${JWT_SECRET:change-me-to-a-256-bit-secret-please-change-me-123456}
     access-minutes: ${JWT_ACCESS_MINUTES:30}
     refresh-days: ${JWT_REFRESH_DAYS:7}
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    login-max: ${RATE_LIMIT_LOGIN_MAX:20}
+    refresh-max: ${RATE_LIMIT_REFRESH_MAX:60}
+    default-max: ${RATE_LIMIT_DEFAULT_MAX:600}
+    window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
 
 springdoc:
   api-docs:
