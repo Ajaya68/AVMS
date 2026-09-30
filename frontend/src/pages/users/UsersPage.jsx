@@ -154,6 +154,12 @@ function UsersPage() {
   const { data: roles, error: rolesError } = useApi(() => fetchRoles(), []);
 
   const list = Array.isArray(data?.results) ? data.results : data || [];
+  // Employee logins live outside the Users section (they are managed as
+  // staff): hide EMPLOYEE-role accounts here and never offer the role
+  // in the create/edit form.
+  const isEmployeeLogin = (u) => (u.role_codes || []).includes("EMPLOYEE");
+  const visibleList = list.filter((u) => !isEmployeeLogin(u));
+  const formRoles = (roles || []).filter((r) => r.code !== "EMPLOYEE");
   const roleNames = Object.fromEntries(
     (roles || []).map((r) => [r.code, r.name])
   );
@@ -207,7 +213,7 @@ function UsersPage() {
               />
             </InputGroup>
             <span className="text-muted small">
-              {data?.count ?? list.length} user(s)
+              {visibleList.length} user(s)
             </span>
           </div>
         </Card.Header>
@@ -218,11 +224,11 @@ function UsersPage() {
             <Alert variant="danger" className="mb-0">
               Unable to load users. Check that the backend is running.
             </Alert>
-          ) : list.length === 0 ? (
+          ) : visibleList.length === 0 ? (
             <div className="text-center text-muted py-4">No users found.</div>
           ) : (
             <Row className="g-3">
-              {list.map((user) => {
+              {visibleList.map((user) => {
                 const displayName = user.full_name || user.email;
                 const initials = displayName
                   .split(/[\s@._-]+/)
@@ -328,7 +334,7 @@ function UsersPage() {
           <UserForm
             key={editing?.id ?? "new"}
             initial={editing}
-            roles={roles || []}
+            roles={formRoles}
             onCancel={() => { setShowCreate(false); setEditing(null); }}
             onSubmit={async (payload) => {
               if (editing) {

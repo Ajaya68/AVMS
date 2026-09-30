@@ -1,6 +1,15 @@
 import { Card, Col } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
+// Local (not exported) so react fast-refresh stays happy.
+const money2 = (value) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+
 export function KpiCard({ icon, className, title, value, plain }) {
   return (
     <Col xs={12} sm={6} xl={3}>
