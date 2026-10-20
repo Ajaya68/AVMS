@@ -1,6 +1,24 @@
 spring:
   application:
     name: avms-backend
+  mail:
+    # Gmail SMTP for one-time/password-reset emails. Credentials come only
+    # from the environment (SMTP_USER = full Gmail address + app password in
+    # SMTP_PASSWORD); both blank => email sending disabled and the OTP falls
+    # back to console delivery. Never hardcode credentials here.
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
   autoconfigure:
     # Auth is fully custom (JWT filter + method security); the default
     # in-memory UserDetailsService only exists to print an auto-generated
@@ -57,11 +75,9 @@ server:
 avms:
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:5173}
-  auth:
-    # Dev convenience only: include the reset URL in the forgot-password
-    # response (no mail server locally). Never enable in prod; tokens are
-    # delivered by email in real deployments.
-    expose-reset-link: ${EXPOSE_RESET_LINK:false}
+  mail:
+    # OTP "from" identity override; defaults to the SMTP username.
+    from: ${SMTP_FROM:}
   jwt:
     secret: ${JWT_SECRET:change-me-to-a-256-bit-secret-please-change-me-123456}
     access-minutes: ${JWT_ACCESS_MINUTES:30}

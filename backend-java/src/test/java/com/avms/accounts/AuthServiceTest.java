@@ -67,18 +67,38 @@ import java.util.Set;
   }
 
   @Test
-  void forgotPasswordAlwaysGenericAndDevEchoesOtp() {
-    Map<String, Object> unknown = auth.requestPasswordReset("nobody@avms.local", false);
+  void forgotPasswordAlwaysGenericAndNeverEchoesOtp() {
+    Map<String, Object> unknown = auth.requestPasswordReset("nobody@avms.local");
     assertThat(unknown).containsKeys("detail").doesNotContainKey("otp");
 
-    Map<String, Object> known = auth.requestPasswordReset("staff@avms.local", false);
+    Map<String, Object> known = auth.requestPasswordReset("staff@avms.local");
     assertThat(known).containsKeys("detail").doesNotContainKey("otp");
+  }
 
-    // dev mode echoes the syntactically valid OTP and resolves to the stored hash
-    Map<String, Object> dev = auth.requestPasswordReset("staff@avms.local", true);
-    assertThat(dev).containsKey("otp");
-    String otp = String.valueOf(dev.get("otp"));
-    assertThat(otp).hasSize(6).matches("\\d{6}");
+  /** The SMTP fallback logs the raw OTP on the console — tests capture it there. */
+  private String otpFromLog(String email) {
+    var logger = (ch.qos.logback.classic.Logger)
+        org.slf4j.LoggerFactory.getLogger(com.avms.accounts.AuthService.class);
+    var appender = new ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent>();
+    appender.start();
+    logger.addAppender(appender);
+    try {
+      auth.requestPasswordReset(email);
+      return appender.list.stream()
+          .map(ch.qos.logback.classic.spi.ILoggingEvent::getFormattedMessage)
+          .filter(m -> m.contains("Password reset OTP for " + email))
+          .map(m -> {
+            java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("([0-9]{6})").matcher(m);
+            matcher.find();
+            return matcher.group(1);
+          })
+          .findFirst()
+          .orElseThrow(() -> new IllegalStateException("OTP not logged"));
+    } finally {
+      logger.detachAppender(appender);
+      appender.stop();
+    }
   }
 
   @Test
@@ -86,7 +106,7 @@ import java.util.Set;
     Map<String, Object> login = auth.login("staff@avms.local", "Staff@12345");
     String oldRefresh = (String) login.get("refresh");
 
-    String otp = String.valueOf(auth.requestPasswordReset("staff@avms.local", true).get("otp"));
+    String otp = otpFromLog("staff@avms.local");
 
     // Garbage inputs fail with the same generic message (no oracle on which part failed)
     assertThatThrownBy(() -> auth.resetPassword("garbage!!", otp, "NewPass@12345"))
@@ -110,8 +130,8 @@ import java.util.Set;
 
   @Test
   void expiredResetTokensAreRejectedAndPurged() {
-    auth.requestPasswordReset("", false);
-    String otp = String.valueOf(auth.requestPasswordReset("staff@avms.local", true).get("otp"));
+    auth.requestPasswordReset("");
+    String otp = otpFromLog("staff@avms.local");
 
     resetTokens.findAll().forEach(t -> t.setExpiresAt(java.time.Instant.now().minusSeconds(60)));
     resetTokens.saveAll(resetTokens.findAll());

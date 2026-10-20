@@ -54,7 +54,7 @@ public class AuthController {
   @PostMapping("/forgot-password")
   public ResponseEntity<ApiResponse<Map<String, Object>>> forgotPassword(
       @Valid @RequestBody AuthDtos.ForgotPasswordRequest req) {
-    return ResponseEntity.ok(ApiResponse.ok(auth.requestPasswordReset(req.email(), false)));
+    return ResponseEntity.ok(ApiResponse.ok(auth.requestPasswordReset(req.email())));
   }
 
   @PostMapping("/reset-password")

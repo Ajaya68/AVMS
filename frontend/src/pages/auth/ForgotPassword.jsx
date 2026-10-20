@@ -7,8 +7,7 @@ import { requestPasswordReset } from "../../services/authService";
 function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
-  const [devOtp, setDevOtp] = useState("");
+  const [sentTo, setSentTo] = useState("");
   const [error, setError] = useState("");
 
   const handleSubmit = async (event) => {
@@ -16,13 +15,8 @@ function ForgotPassword() {
     setError("");
     setSubmitting(true);
     try {
-      const data = await requestPasswordReset(email);
-      setDone(true);
-      // In dev the backend echoes the OTP in the response so the flow is
-      // demonstrable without a mail relay; production shows only the console.
-      if (data?.otp) {
-        setDevOtp(data.otp);
-      }
+      await requestPasswordReset(email);
+      setSentTo(email.trim());
     } catch (err) {
       setError(
         err?.response?.data?.message || "Unable to request a password reset."
@@ -41,7 +35,7 @@ function ForgotPassword() {
             <div>
               <h4 className="mb-0">Reset password</h4>
               <small className="text-muted">
-                We will issue a one-time code (OTP) to reset your password
+                A one-time code (OTP) will be emailed to you
               </small>
             </div>
           </div>
@@ -52,12 +46,20 @@ function ForgotPassword() {
             </div>
           )}
 
-          {done ? (
-            <Alert variant="success" className="mb-3">
-              If an account exists for that email, a one-time reset code has
-              been issued. It is valid for 10 minutes and printed on the
-              server console.
-            </Alert>
+          {sentTo ? (
+            <>
+              <Alert variant="success" className="mb-3">
+                If an account exists for that email, a one-time reset code has
+                been sent to your email address. It is valid for 10 minutes.
+              </Alert>
+              <Link
+                to={`/reset-password?email=${encodeURIComponent(sentTo)}`}
+                className="btn btn-outline-primary w-100"
+              >
+                <i className="bi bi-key me-2" />
+                I have the code — reset password
+              </Link>
+            </>
           ) : (
             <Form onSubmit={handleSubmit}>
               <Form.Group className="mb-3" controlId="forgot-email">
@@ -76,24 +78,9 @@ function ForgotPassword() {
                 className="btn btn-primary w-100"
                 disabled={submitting}
               >
-                {submitting ? "Sending..." : "Send me a one-time code"}
+                {submitting ? "Sending..." : "Email me a one-time code"}
               </button>
             </Form>
-          )}
-
-          {devOtp && (
-            <div className="mt-3 small text-muted border rounded p-2">
-              <div className="mb-1">
-                <i className="bi bi-info-circle me-1" />
-                Development build: your one-time code is{" "}
-                <span className="fw-bold">{devOtp}</span>
-              </div>
-              <Link
-                to={`/reset-password?email=${encodeURIComponent(email)}`}
-              >
-                Continue to reset password
-              </Link>
-            </div>
           )}
 
           <div className="text-center mt-3">

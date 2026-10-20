@@ -35,12 +35,9 @@ public class AuthService {
   /** Refresh-token lifetime cap for the whole reset-change-rotation chain. */
   static final long RESET_TOKEN_MINUTES = 30;
   static final String GENERIC_RESET_MESSAGE = "If an account exists for that email, reset instructions have been issued.";
-  private static final String RESET_URL_PATH = "/reset-password";
-  /** 2^232+ random value, hashed before storage; raw form never persisted. */
-  private static final int RESET_TOKEN_BYTES = 32;
   private static final SecureRandom RANDOM = new SecureRandom();
-  /** OTP: 6 digits, 10-minute lifetime, single use. Console delivery is the
-   *  deliberate local-recovery channel — no mail server exists. */
+  /** OTP: 6 digits, 10-minute lifetime, single use. Emailed when SMTP is
+   *  configured; console is the fallback channel otherwise. */
   private static final int OTP_DIGITS = 6;
   private static final int OTP_TTL_MINUTES = 10;
   /** Never matched against a real account; equalizes BCrypt work for unknown
@@ -55,13 +52,16 @@ public class AuthService {
   private final JwtService jwt;
   private final PasswordEncoder encoder;
   private final AuditService audit;
-  private final boolean exposeResetLink;
-  private final String firstFrontendOrigin;
+  private final org.springframework.mail.javamail.JavaMailSender mailSender;
+  private final String smtpFrom;
+  private final boolean mailEnabled;
 
   public AuthService(AccountsUserRepository users, RoleRepository roles, RefreshTokenRepository refreshTokens,
       PasswordResetTokenRepository resetTokens, JwtService jwt, PasswordEncoder encoder, AuditService audit,
-      @Value("${avms.auth.expose-reset-link:false}") boolean exposeResetLink,
-      @Value("${avms.cors.allowed-origins:http://localhost:5173}") String allowedOrigins) {
+      org.springframework.mail.javamail.JavaMailSender mailSender,
+      @Value("${avms.mail.from:}") String mailFrom,
+      @Value("${spring.mail.username:}") String smtpUser,
+      @Value("${spring.mail.password:}") String smtpPassword) {
     this.users = users;
     this.roles = roles;
     this.refreshTokens = refreshTokens;
@@ -69,12 +69,10 @@ public class AuthService {
     this.jwt = jwt;
     this.encoder = encoder;
     this.audit = audit;
-    this.exposeResetLink = exposeResetLink;
-    this.firstFrontendOrigin = java.util.Arrays.stream(allowedOrigins.split(","))
-        .map(String::trim)
-        .filter(s -> !s.isEmpty() && !s.contains("*"))
-        .findFirst()
-        .orElse("http://localhost:5173");
+    this.mailSender = mailSender;
+    this.smtpFrom = mailFrom != null && !mailFrom.isBlank() ? mailFrom : smtpUser;
+    this.mailEnabled = smtpUser != null && !smtpUser.isBlank()
+        && smtpPassword != null && !smtpPassword.isBlank();
   }
 
   @Transactional
@@ -171,17 +169,13 @@ public class AuthService {
 
   /**
    * Issues a single-use 6-digit OTP (10-minute lifetime), SHA-256-hashed in
-   * storage. Delivered on the server console (no mail server exists) and, in
-   * dev only, echoed in the response. Responses are always generic to prevent
-   * user enumeration.
+   * storage. Emailed when SMTP credentials exist; the response NEVER contains
+   * the code. Without SMTP: console fallback. Generic against enumeration.
    */
   @Transactional
-  public Map<String, Object> requestPasswordReset(String email, boolean allowLink) {
+  public Map<String, Object> requestPasswordReset(String email) {
     Map<String, Object> out = new HashMap<>();
     out.put("detail", GENERIC_RESET_MESSAGE);
-    if (exposeResetLink) {
-      allowLink = true;
-    }
     String normalized = email == null ? "" : email.trim();
     AccountsUser user = users.findByEmailIgnoreCase(normalized).orElse(null);
     if (user != null && Boolean.TRUE.equals(user.getIsActive())) {
@@ -190,18 +184,17 @@ public class AuthService {
       String otp = newOtp();
       resetTokens.save(new PasswordResetToken(user.getEmail(), hashToken(otp),
           Instant.now().plusSeconds(OTP_TTL_MINUTES * 60)));
-      // Delivery channel: server console always takes it (local recovery); dev
-      // additionally echoes the code in the response for convenience.
-      log.info("[forgot-password] Password reset OTP for {}: {} (valid {} min)",
-          user.getEmail(), otp, OTP_TTL_MINUTES);
-      if (allowLink) {
-        out.put("otp", otp);
-        String uidb64 = Base64.getUrlEncoder().withoutPadding()
-            .encodeToString(String.valueOf(user.getId()).getBytes(StandardCharsets.US_ASCII));
-        out.put("reset_url", firstFrontendOrigin + RESET_URL_PATH + "?uidb64=" + uidb64);
+      boolean emailed = mailEnabled && sendMail(user.getEmail(), otp);
+      if (emailed) {
+        log.info("[forgot-password] Password reset OTP emailed to {} (valid {} min)",
+            user.getEmail(), OTP_TTL_MINUTES);
+      } else {
+        // SMTP not configured or send failed: console is the fallback channel.
+        log.info("[forgot-password] Password reset OTP for {}: {} (SMTP unavailable, console fallback, valid {} min)",
+            user.getEmail(), otp, OTP_TTL_MINUTES);
       }
       audit.log("PASSWORD_RESET_REQUESTED", "accounts", "User", String.valueOf(user.getId()),
-          "Password reset requested (OTP issued).");
+          emailed ? "Password reset requested (OTP emailed)." : "Password reset requested (console fallback).");
     }
     return out;
   }
@@ -212,6 +205,26 @@ public class AuthService {
       sb.append(RANDOM.nextInt(10));
     }
     return sb.toString();
+  }
+
+  private boolean sendMail(String to, String otp) {
+    try {
+      org.springframework.mail.SimpleMailMessage msg = new org.springframework.mail.SimpleMailMessage();
+      if (smtpFrom != null && !smtpFrom.isBlank()) {
+        msg.setFrom(smtpFrom);
+      }
+      msg.setTo(to);
+      msg.setSubject("Your AVMS password reset code");
+      msg.setText("Your one-time password reset code is: " + otp + "\n\n"
+          + "It is valid for " + OTP_TTL_MINUTES + " minutes and can be used once.\n"
+          + "If you did not request a password reset, you can safely ignore this email.");
+      mailSender.send(msg);
+      return true;
+    } catch (Exception e) {
+      log.warn("[forgot-password] SMTP send failed for {}: {} — falling back to console delivery",
+          to, e.getMessage());
+      return false;
+    }
   }
 
   private String hashToken(String rawToken) {
