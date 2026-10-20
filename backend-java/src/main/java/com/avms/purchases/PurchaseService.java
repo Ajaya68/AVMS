@@ -166,6 +166,7 @@ public class PurchaseService {
 
   @Transactional
   public PurchaseDtos.PurchaseResponse update(Long id, PurchaseDtos.PurchaseRequest req) {
+    req.validate(false);
     Purchase purchase = findScoped(id);
     if (req.purchaseDate() != null) {
       purchase.setPurchaseDate(req.purchaseDate());
@@ -265,7 +266,13 @@ public class PurchaseService {
     ret.setTotalAmount(Money.amount(total));
     returns.save(ret);
 
-    purchase.setReturnedAmount(Money.amount(purchase.getReturnedAmount().add(ret.getTotalAmount())));
+    // Refund amounts here are operator-supplied per line; the aggregate can
+    // never exceed the bill total regardless of inflated line prices.
+    BigDecimal returnedAfter = purchase.getReturnedAmount().add(ret.getTotalAmount());
+    if (returnedAfter.compareTo(purchase.getTotalAmount()) > 0) {
+      throw new IllegalArgumentException("Return total exceeds the purchase total.");
+    }
+    purchase.setReturnedAmount(Money.amount(returnedAfter));
     purchase.setDueAmount(
         Money.due(purchase.getTotalAmount(), purchase.getPaidAmount(), purchase.getReturnedAmount()));
     if (purchase.getReturnedAmount().compareTo(purchase.getTotalAmount()) >= 0) {

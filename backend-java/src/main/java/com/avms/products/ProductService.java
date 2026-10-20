@@ -72,6 +72,7 @@ public class ProductService {
 
   @Transactional
   public ProductsDtos.ProductResponse update(Long id, ProductsDtos.ProductRequest req) {
+    req.validate(false);
     Product product = findScoped(id);
     if (req.unit() != null) {
       product.setUnit(units.findById(req.unit())

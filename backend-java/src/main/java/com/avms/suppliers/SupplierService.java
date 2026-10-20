@@ -60,6 +60,7 @@ public class SupplierService {
 
   @Transactional
   public SupplierDtos.SupplierResponse update(Long id, SupplierDtos.SupplierRequest req) {
+    req.validate(false);
     Supplier supplier = findScoped(id);
     apply(req, supplier);
     suppliers.save(supplier);

@@ -3,15 +3,21 @@ package com.avms.accounts;
 import com.avms.audit.AuditService;
 import com.avms.common.ResourceNotFoundException;
 import com.avms.security.JwtService;
+import com.avms.security.PasswordResetToken;
+import com.avms.security.PasswordResetTokenRepository;
 import com.avms.security.RefreshToken;
 import com.avms.security.RefreshTokenRepository;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,31 +29,60 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuthService {
 
+  /** Refresh-token lifetime cap for the whole reset-change-rotation chain. */
+  static final long RESET_TOKEN_MINUTES = 30;
+  static final String GENERIC_RESET_MESSAGE = "If an account exists for that email, reset instructions have been issued.";
+  private static final String RESET_URL_PATH = "/reset-password";
+  /** 2^232+ random value, hashed before storage; raw form never persisted. */
+  private static final int RESET_TOKEN_BYTES = 32;
+  private static final SecureRandom RANDOM = new SecureRandom();
+  /** Never matched against a real account; equalizes BCrypt work for unknown
+   *  emails so response timing cannot reveal whether an email exists. */
+  private static final String DUMMY_BCRYPT_HASH =
+      new BCryptPasswordEncoder().encode(UUID.randomUUID().toString());
+
   private final AccountsUserRepository users;
   private final RoleRepository roles;
   private final RefreshTokenRepository refreshTokens;
+  private final PasswordResetTokenRepository resetTokens;
   private final JwtService jwt;
   private final PasswordEncoder encoder;
   private final AuditService audit;
+  private final boolean exposeResetLink;
+  private final String firstFrontendOrigin;
 
   public AuthService(AccountsUserRepository users, RoleRepository roles, RefreshTokenRepository refreshTokens,
-      JwtService jwt, PasswordEncoder encoder, AuditService audit) {
+      PasswordResetTokenRepository resetTokens, JwtService jwt, PasswordEncoder encoder, AuditService audit,
+      @Value("${avms.auth.expose-reset-link:false}") boolean exposeResetLink,
+      @Value("${avms.cors.allowed-origins:http://localhost:5173}") String allowedOrigins) {
     this.users = users;
     this.roles = roles;
     this.refreshTokens = refreshTokens;
+    this.resetTokens = resetTokens;
     this.jwt = jwt;
     this.encoder = encoder;
     this.audit = audit;
+    this.exposeResetLink = exposeResetLink;
+    this.firstFrontendOrigin = java.util.Arrays.stream(allowedOrigins.split(","))
+        .map(String::trim)
+        .filter(s -> !s.isEmpty() && !s.contains("*"))
+        .findFirst()
+        .orElse("http://localhost:5173");
   }
 
   @Transactional
   public Map<String, Object> login(String email, String password) {
-    AccountsUser user = users.findByEmailIgnoreCase(email.trim())
-        .orElseThrow(() -> new ResourceNotFoundException("Invalid email or password."));
-    if (!Boolean.TRUE.equals(user.getIsActive())) {
+    // Uniform no-match message; unknown emails still pay one BCrypt round so
+    // response timing cannot distinguish them from valid accounts.
+    AccountsUser user = users.findByEmailIgnoreCase(email.trim()).orElse(null);
+    if (user == null) {
+      encoder.matches(password, DUMMY_BCRYPT_HASH);
       throw new ResourceNotFoundException("Invalid email or password.");
     }
     if (!matches(password, user.getPassword())) {
+      throw new ResourceNotFoundException("Invalid email or password.");
+    }
+    if (!Boolean.TRUE.equals(user.getIsActive())) {
       throw new ResourceNotFoundException("Invalid email or password.");
     }
     if (isLegacyHash(user.getPassword())) {
@@ -111,7 +146,13 @@ public class AuthService {
     }
     user.setPassword(encoder.encode(newPassword));
     users.save(user);
-    audit.log("PASSWORD_CHANGED", "accounts", "User", String.valueOf(user.getId()), "Password changed.");
+    // A stolen refresh token must not survive a password change (matches the
+    // reset flow). Access JWTs stay valid until their ≤30-min expiry, which is
+    // the documented stateless tradeoff.
+    refreshTokens.findByUserEmailIgnoreCase(user.getEmail())
+        .forEach(t -> t.setRevoked(true));
+    audit.log("PASSWORD_CHANGED", "accounts", "User", String.valueOf(user.getId()),
+        "Password changed; issued sessions revoked.");
   }
 
   @Transactional(readOnly = true)
@@ -119,6 +160,84 @@ public class AuthService {
     AccountsUser user = users.findByEmailIgnoreCase(email)
         .orElseThrow(() -> new ResourceNotFoundException("User not found."));
     return toUserResponse(user);
+  }
+
+  /**
+   * Issues a single-use, 30-minute, hashed reset token. Response is always
+   * generic to prevent user enumeration; a visible reset URL is included ONLY
+   * when expose-reset-link is enabled (dev), because there is no mail server.
+   */
+  @Transactional
+  public Map<String, Object> requestPasswordReset(String email, boolean allowLink) {
+    Map<String, Object> out = new HashMap<>();
+    out.put("detail", GENERIC_RESET_MESSAGE);
+    if (exposeResetLink) {
+      allowLink = true;
+    }
+    String normalized = email == null ? "" : email.trim();
+    AccountsUser user = users.findByEmailIgnoreCase(normalized).orElse(null);
+    if (user != null && Boolean.TRUE.equals(user.getIsActive())) {
+      // One outstanding token per email: purge expired/used predecessors first.
+      resetTokens.deleteByUserEmailIgnoreCase(user.getEmail());
+      String rawToken = newToken();
+      resetTokens.save(new PasswordResetToken(user.getEmail(), hashToken(rawToken),
+          Instant.now().plusSeconds(RESET_TOKEN_MINUTES * 60)));
+      if (allowLink) {
+        String uidb64 = Base64.getUrlEncoder().withoutPadding()
+            .encodeToString(String.valueOf(user.getId()).getBytes(StandardCharsets.US_ASCII));
+        out.put("reset_url", firstFrontendOrigin + RESET_URL_PATH + "?uidb64=" + uidb64 + "&token=" + rawToken);
+      }
+      audit.log("PASSWORD_RESET_REQUESTED", "accounts", "User", String.valueOf(user.getId()),
+          "Password reset requested.");
+    }
+    return out;
+  }
+
+  private String newToken() {
+    byte[] bytes = new byte[RESET_TOKEN_BYTES];
+    RANDOM.nextBytes(bytes);
+    return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+  }
+
+  private String hashToken(String rawToken) {
+    try {
+      byte[] digest = MessageDigest.getInstance("SHA-256")
+          .digest(rawToken.getBytes(StandardCharsets.UTF_8));
+      return java.util.HexFormat.of().formatHex(digest);
+    } catch (Exception e) {
+      throw new IllegalStateException("SHA-256 unavailable", e);
+    }
+  }
+
+  @Transactional
+  public Map<String, Object> resetPassword(String uidb64, String rawToken, String newPassword) {
+    Long userId;
+    try {
+      userId = Long.parseLong(new String(Base64.getUrlDecoder().decode(uidb64), StandardCharsets.US_ASCII));
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Invalid or expired reset link.");
+    }
+    if (rawToken == null || rawToken.isBlank()) {
+      throw new IllegalArgumentException("Invalid or expired reset link.");
+    }
+    PasswordResetToken token = resetTokens.findByTokenHash(hashToken(rawToken))
+        .orElseThrow(() -> new IllegalArgumentException("Invalid or expired reset link."));
+    if (token.isExpired()) {
+      resetTokens.delete(token);
+      throw new IllegalArgumentException("Invalid or expired reset link.");
+    }
+    AccountsUser user = users.findById(userId)
+        .filter(u -> u.getEmail().equalsIgnoreCase(token.getUserEmail()))
+        .orElseThrow(() -> new IllegalArgumentException("Invalid or expired reset link."));
+    user.setPassword(encoder.encode(newPassword));
+    users.save(user);
+    resetTokens.delete(token);
+    // Any session using old credentials dies immediately.
+    refreshTokens.findByUserEmailIgnoreCase(user.getEmail())
+        .forEach(t -> t.setRevoked(true));
+    audit.log("PASSWORD_RESET", "accounts", "User", String.valueOf(user.getId()),
+        "Password reset completed via reset link.");
+    return Map.of("detail", "Password has been reset. You can now sign in with the new password.");
   }
 
   public static AuthDtos.UserResponse toUserResponse(AccountsUser user) {

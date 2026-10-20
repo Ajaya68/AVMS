@@ -60,6 +60,7 @@ public class WarehouseService {
 
   @Transactional
   public InventoryDtos.WarehouseResponse update(Long id, InventoryDtos.WarehouseRequest req) {
+    req.validate(false);
     Warehouse warehouse = findScoped(id);
     apply(req, warehouse);
     warehouses.save(warehouse);

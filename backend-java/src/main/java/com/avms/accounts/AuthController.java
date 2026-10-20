@@ -51,6 +51,18 @@ public class AuthController {
     return ResponseEntity.ok(ApiResponse.ok(Map.of("detail", "Logged out.")));
   }
 
+  @PostMapping("/forgot-password")
+  public ResponseEntity<ApiResponse<Map<String, Object>>> forgotPassword(
+      @Valid @RequestBody AuthDtos.ForgotPasswordRequest req) {
+    return ResponseEntity.ok(ApiResponse.ok(auth.requestPasswordReset(req.email(), false)));
+  }
+
+  @PostMapping("/reset-password")
+  public ResponseEntity<ApiResponse<Map<String, Object>>> resetPassword(
+      @Valid @RequestBody AuthDtos.ResetPasswordRequest req) {
+    return ResponseEntity.ok(ApiResponse.ok(auth.resetPassword(req.uidb64(), req.token(), req.newPassword())));
+  }
+
   @GetMapping("/me")
   public ResponseEntity<ApiResponse<AuthDtos.UserResponse>> me(Authentication authentication) {
     String email = ((CustomUserDetails) authentication.getPrincipal()).getEmail();

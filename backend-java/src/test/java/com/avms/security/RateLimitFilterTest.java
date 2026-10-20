@@ -29,6 +29,31 @@ class RateLimitFilterTest {
       return "ok";
     }
 
+    @PostMapping("/api/auth/forgot-password")
+    String forgot() {
+      return "ok";
+    }
+
+    @PostMapping("/api/auth/reset-password")
+    String reset() {
+      return "ok";
+    }
+
+    @PostMapping("/api/payments")
+    String payments() {
+      return "ok";
+    }
+
+    @PostMapping("/api/mutate-a")
+    String mutateA() {
+      return "ok";
+    }
+
+    @PostMapping("/api/mutate-b")
+    String mutateB() {
+      return "ok";
+    }
+
     @GetMapping("/api/products")
     String products() {
       return "ok";
@@ -36,8 +61,12 @@ class RateLimitFilterTest {
   }
 
   private MockMvc mvc(int loginMax, int refreshMax, int defaultMax) {
+    return mvc(loginMax, refreshMax, 120, defaultMax);
+  }
+
+  private MockMvc mvc(int loginMax, int refreshMax, int mutateMax, int defaultMax) {
     return MockMvcBuilders.standaloneSetup(new PingController())
-        .addFilters(new RateLimitFilter(true, loginMax, refreshMax, defaultMax, 60))
+        .addFilters(new RateLimitFilter(true, loginMax, refreshMax, mutateMax, defaultMax, 60))
         .build();
   }
 
@@ -70,6 +99,37 @@ class RateLimitFilterTest {
     mvc.perform(post("/api/auth/refresh").contentType(MediaType.APPLICATION_JSON)
             .content("{}"))
         .andExpect(status().isOk());
+    mvc.perform(get("/api/products"))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  void forgotAndResetShareLoginBucket() throws Exception {
+    MockMvc mvc = mvc(1, 100, 1000);
+    mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        .andExpect(status().isOk());
+    // Credential-recovery endpoints draw from the strict login bucket so a
+    // leaked login budget cannot be renewed by switching endpoint families.
+    mvc.perform(post("/api/auth/forgot-password").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"email\":\"x@y.z\"}"))
+        .andExpect(status().isTooManyRequests());
+    mvc.perform(post("/api/auth/reset-password").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"uidb64\":\"MQ\",\"token\":\"t\",\"new_password\":\"12345678\"}"))
+        .andExpect(status().isTooManyRequests());
+  }
+
+  @Test
+  void mutationsShareStrictBucketIndependentOfReads() throws Exception {
+    MockMvc mvc = mvc(100, 100, 2, 1000);
+    mvc.perform(post("/api/mutate-a").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        .andExpect(status().isOk());
+    mvc.perform(post("/api/mutate-b").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        .andExpect(status().isOk());
+    // Third mutation in the window: throttled even across different endpoints
+    mvc.perform(post("/api/mutate-a").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        .andExpect(status().isTooManyRequests())
+        .andExpect(jsonPath("$.success").value(false));
+    // Reads are unaffected by mutation exhaustion
     mvc.perform(get("/api/products"))
         .andExpect(status().isOk());
   }

@@ -1,10 +1,14 @@
 package com.avms.inventory;
 
+import com.avms.common.Validators;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Set;
 
 public class InventoryDtos {
+
+  private static final Set<String> STATUSES = Set.of("ACTIVE", "INACTIVE");
 
   public record WarehouseRequest(Long venture, String warehouseName, String address, String city, String state,
       String pincode, String manager, String status) {
@@ -12,6 +16,13 @@ public class InventoryDtos {
       if (create && (warehouseName == null || warehouseName.isBlank())) {
         throw new IllegalArgumentException("warehouse_name is required.");
       }
+      Validators.text(warehouseName, "warehouse_name", 150);
+      Validators.text(address, "address", 255);
+      Validators.text(city, "city", 100);
+      Validators.text(state, "state", 100);
+      Validators.text(pincode, "pincode", 20);
+      Validators.text(manager, "manager", 150);
+      Validators.allowedValue(status, STATUSES, "status");
     }
   }
 
@@ -38,6 +49,9 @@ public class InventoryDtos {
       if (movementDate == null) {
         throw new IllegalArgumentException("movement_date is required.");
       }
+      Validators.text(movementType, "movement_type", 20);
+      Validators.text(notes, "notes", 255);
+      Validators.text(referenceType, "reference_type", 80);
     }
   }
 

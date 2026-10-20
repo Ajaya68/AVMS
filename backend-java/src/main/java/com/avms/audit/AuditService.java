@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-/** Port of Django audit.services.log_audit: user + X-Forwarded-For-aware IP. */
+/** Port of Django audit.services.log_audit: user + proxy-resolved IP. */
 @Service
 public class AuditService {
 
@@ -42,6 +42,9 @@ public class AuditService {
     return auth != null ? auth.getName() : null;
   }
 
+  /** Socket peer IP; trusted-proxy resolution is centralized in
+   *  server.forward-headers-strategy: framework (prod) so raw client-supplied
+   *  X-Forwarded-For can never forge audit rows. */
   private String clientIp() {
     try {
       var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
@@ -49,11 +52,8 @@ public class AuditService {
         return null;
       }
       HttpServletRequest req = attrs.getRequest();
-      String forwarded = req.getHeader("X-Forwarded-For");
-      if (forwarded != null && !forwarded.isBlank()) {
-        return forwarded.split(",")[0].trim();
-      }
-      return req.getRemoteAddr();
+      String remote = req.getRemoteAddr();
+      return remote != null ? remote : null;
     } catch (Exception e) {
       return null;
     }

@@ -91,6 +91,7 @@ public class EmployeeService {
 
   @Transactional
   public EmployeeDtos.EmployeeResponse update(Long id, EmployeeDtos.EmployeeRequest req) {
+    req.validate(false);
     Employee employee = findScoped(id);
     apply(req, employee);
     if (req.user() != null) {

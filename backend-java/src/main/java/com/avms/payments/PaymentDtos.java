@@ -1,5 +1,6 @@
 package com.avms.payments;
 
+import com.avms.common.Validators;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -25,6 +26,11 @@ public class PaymentDtos {
       if (paymentDate == null) {
         throw new IllegalArgumentException("payment_date is required.");
       }
+      Validators.text(paymentType, "payment_type", 20);
+      Validators.text(referenceType, "reference_type", 20);
+      Validators.text(paymentMethod, "payment_method", 20);
+      Validators.text(transactionReference, "transaction_reference", 100);
+      Validators.text(notes, "notes", 255);
     }
   }
 

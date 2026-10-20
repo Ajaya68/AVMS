@@ -64,6 +64,7 @@ public class CustomerService {
 
   @Transactional
   public CustomerDtos.CustomerResponse update(Long id, CustomerDtos.CustomerRequest req) {
+    req.validate(false);
     Customer customer = findScoped(id);
     apply(req, customer);
     customers.save(customer);

@@ -85,4 +85,28 @@ class AuthControllerTest {
             .content("{\"refresh\":\"" + refresh2 + "\"}"))
         .andExpect(status().isOk());
   }
+
+  @Test
+  void forgotPasswordAlwaysGenericAndResetRejectsGarbage() throws Exception {
+    // Unknown email: same 200 + generic body as a valid one (no enumeration)
+    mvc.perform(post("/api/auth/forgot-password").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"email\":\"ghost@nowhere.example\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true))
+        .andExpect(jsonPath("$.data.detail").exists())
+        .andExpect(jsonPath("$.data.reset_url").doesNotExist());
+
+    // Reset with garbage params: fixed generic 400, no internals echoed
+    mvc.perform(post("/api/auth/reset-password").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"uidb64\":\"bad!!\",\"token\":\"zzz\",\"new_password\":\"whatever@123\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.success").value(false))
+        .andExpect(jsonPath("$.message").value("Invalid or expired reset link."));
+
+    // Missing/short new password fails validation (generic envelope)
+    mvc.perform(post("/api/auth/reset-password").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"uidb64\":\"MQ\",\"token\":\"zzz\",\"new_password\":\"short\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.success").value(false));
+  }
 }

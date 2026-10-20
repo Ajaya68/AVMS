@@ -1,13 +1,17 @@
 package com.avms.employees;
 
+import com.avms.common.Validators;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class EmployeeDtos {
+
+  private static final Set<String> STATUSES = Set.of("ACTIVE", "INACTIVE", "TERMINATED");
 
   public record EmployeeRequest(Long venture, String firstName, String lastName, String phone, String email,
       String department, String designation, LocalDate joiningDate, BigDecimal salary, String status,
@@ -16,6 +20,14 @@ public class EmployeeDtos {
       if (create && (firstName == null || firstName.isBlank())) {
         throw new IllegalArgumentException("first_name is required.");
       }
+      Validators.text(firstName, "first_name", 100);
+      Validators.text(lastName, "last_name", 100);
+      Validators.text(phone, "phone", 20);
+      Validators.text(department, "department", 100);
+      Validators.text(designation, "designation", 100);
+      Validators.optionalEmail(email, "email");
+      Validators.nonNegative(salary, "salary");
+      Validators.allowedValue(status, STATUSES, "status");
     }
   }
 

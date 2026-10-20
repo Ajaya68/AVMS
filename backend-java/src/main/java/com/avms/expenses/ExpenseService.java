@@ -77,6 +77,7 @@ public class ExpenseService {
 
   @Transactional
   public ExpenseDtos.ExpenseResponse update(Long id, ExpenseDtos.ExpenseRequest req) {
+    req.validate(false);
     Expense expense = findScoped(id);
     if (req.category() != null) {
       expense.setCategory(categories.findById(req.category())

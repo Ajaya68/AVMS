@@ -49,6 +49,7 @@ public class UnitService {
 
   @Transactional
   public ProductsDtos.UnitResponse update(Long id, ProductsDtos.UnitRequest req) {
+    req.validate(false);
     Unit unit = units.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Unit not found."));
     apply(req, unit);

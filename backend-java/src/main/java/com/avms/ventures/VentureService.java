@@ -52,6 +52,7 @@ public class VentureService {
 
   @Transactional
   public VentureDtos.VentureResponse update(Long id, VentureDtos.VentureRequest req) {
+    req.validate(false);
     Venture venture = ventures.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Venture not found."));
     apply(req, venture);

@@ -12,3 +12,8 @@ springdoc:
     enabled: true
   swagger-ui:
     enabled: true
+
+# Dev-only: forgot-password returns the reset URL on screen (no SMTP locally).
+avms:
+  auth:
+    expose-reset-link: true

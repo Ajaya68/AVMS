@@ -165,6 +165,7 @@ public class SaleService {
 
   @Transactional
   public SaleDtos.SaleResponse update(Long id, SaleDtos.SaleRequest req) {
+    req.validate(false);
     Sale sale = findScoped(id);
     if (req.saleDate() != null) {
       sale.setSaleDate(req.saleDate());
@@ -262,7 +263,13 @@ public class SaleService {
     ret.setTotalAmount(Money.amount(total));
     returns.save(ret);
 
-    sale.setReturnedAmount(Money.amount(sale.getReturnedAmount().add(ret.getTotalAmount())));
+    // Refund amounts here are operator-supplied per line; the aggregate can
+    // never exceed the bill total regardless of inflated line prices.
+    BigDecimal returnedAfter = sale.getReturnedAmount().add(ret.getTotalAmount());
+    if (returnedAfter.compareTo(sale.getTotalAmount()) > 0) {
+      throw new IllegalArgumentException("Return total exceeds the sale total.");
+    }
+    sale.setReturnedAmount(Money.amount(returnedAfter));
     sale.setDueAmount(Money.due(sale.getTotalAmount(), sale.getPaidAmount(), sale.getReturnedAmount()));
     if (sale.getReturnedAmount().compareTo(sale.getTotalAmount()) >= 0) {
       sale.setStatus("RETURNED");

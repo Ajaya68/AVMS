@@ -1,4 +1,4 @@
-# Security + Production-Readiness Audit — AVMS (2026-09-28)
+# Security + Production-Readiness Audit — AVMS (2026-09-28, updated 2026-10-20)
 
 Role: senior app-sec / architect / production-readiness review of an AI-assisted codebase.
 Rule followed throughout: smallest safe change, no working functionality removed,
@@ -25,7 +25,7 @@ every fix verified by a real run (no invented results).
 
 | # | Finding | Severity | Fix (minimal) | Verification |
 |---|---------|----------|---------------|--------------|
-| 1 | App booted with published placeholder JWT secret (`change-me-…` in code/compose); only a 32-char length check | **Critical** | `JwtService` now rejects any secret containing `change-me`/`please-change`; test profile got its own test-only secret; dev compose/`.env.example` use a labeled dev-only value; prod compose/Render already require a real secret | `mvn -B verify`: **20 tests, 0 failures, JaCoCo 60% gate met, BUILD SUCCESS** (2026-09-28) |
+| 1 | App booted with published placeholder JWT secret (`change-me-…` in code/compose); only a 32-char length check | **Critical** | `JwtService` now rejects any secret containing `change-me`/`please-change`; test profile got its own test-only secret; dev compose/`.env.example` use a labeled dev-only value; prod compose/Render already require a real secret | `mvn -B verify`: 20 tests, 0 failures, JaCoCo 60% gate met, BUILD SUCCESS (2026-09-28) |
 | 2 | Swagger/OpenAPI publicly reachable in prod (SecurityConfig permitAll + Caddy proxied `/v3/api-docs/*`, `/swagger-ui*`) | High | springdoc **disabled by default** (`SPRINGDOC_ENABLED:false`), enabled in dev profile only; Caddy docs handles removed; deploy guides updated | Backend suite green (tests run with docs disabled); no endpoint removed in dev |
 | 3 | No security headers anywhere (backend, nginx, Caddy, Vercel) — clickjacking/MIME-sniff | Medium | Additive-only headers: backend `frame DENY + frame-ancestors 'none' + same-origin referrer + minimal permissions-policy`; nginx/Caddy/Vercel `DENY/nosniff/same-origin/permissions-policy`; Caddy `HSTS`. No CSP on SPA (would break Vite inline bootstrap) | `npm run build` success (2.86s); backend suite green |
 | 4 | CORS origins split without trim; `*` not rejected despite `allowCredentials=true` | Medium | Trim + drop empties; fail fast if `*` configured | Backend suite green |
@@ -65,10 +65,86 @@ every fix verified by a real run (no invented results).
    endpoints don't (frontend 404s). Manual action: either implement
    forgot/reset with single-use HMAC tokens + expiry + generic responses, or
    remove the frontend routes. Left untouched to avoid deleting UI.
+   → **Implemented 2026-10-20** (see §7); removed from residual risk.
+
+## 7. Fix pass 2026-10-20
+
+Four items closed, all verified by real runs:
+
+1. **Password reset implemented (was §3 item 5).** `POST /api/auth/forgot-password`
+   issues a single-use, 30-minute token; only `SHA-256(token)` is stored
+   (`PASSWORD_RESET_TOKEN`, Flyway `V8__password_reset.sql`); responses are
+   always generic against enumeration; success revokes all of the user's
+   refresh tokens and audits `PASSWORD_RESET[_REQUESTED]`. The dev
+   screen-link demo returns `{reset_url}` only when
+   `avms.auth.expose-reset-link=true` (dev profile default; prod stays
+   disabled). One outstanding token per email (previous ones purged on
+   re-issue).
+2. **Rate-limit/audit IP spoofing fixed.** `RateLimitFilter` and
+   `AuditService` no longer trust raw `X-Forwarded-For` (client-settable →
+   rotating buckets to bypass throttling, or forging audit rows); both use
+   `request.getRemoteAddr()`, with trusted-proxy resolution centralized in
+   `server.forward-headers-strategy: framework` (prod profile; backend is only
+   reachable via Caddy in prod). Forgot/reset-password now share the strict
+   login bucket (20/min) instead of the generous default.
+3. **Login enumeration timing equalized.** Unknown emails pay one BCrypt
+   compare against a random preimage hash (class-load constant), so credential
+   checking costs the same whether the account exists; messages were already
+   uniform.
+4. **Secret-scan CI restored.** The uncommitted local deletion of
+   `.github/workflows/secret-scan.yml` was reverted (`.gitleaks.toml` policy
+   from 2026-09-28 requires this workflow; git history confirms it was part
+   of the secrets sweep).
+
+Verification (real runs 2026-10-20): `mvn -B verify` exit 0 — **31 tests run,
+0 failures/errors/skipped** (26 pre-existing + 5 new: surefire XML `tests=`
+attributes, summed per class), JaCoCo coverage 73% (gate 60%); new tests cover
+reset lifecycle (rotation, single-use, expiry, generic errors), forgot-password
+enumeration-safety at both service and API level, and rate-limit bucket
+sharing for the recovery endpoints. `npm run lint && npm run build` —
+success (pre-existing chunk-size warning unchanged). No secrets introduced
+(commit is placeholder/system-generated values only).
 6. **Secret hygiene (verified clean).** No real `.env` files are tracked
    (`git ls-files` shows only `.env.example` files); `target/`,
    `node_modules/`, `dist/` untracked. Keep it that way: real secrets only via
    environment (Render dashboard / VPS `.env.prod`, never committed).
+
+### Pass 2 (2026-10-20, later same day): dependency audit + regression guards
+
+Smallest-safe-change dependency posture work, all verified by real runs:
+
+1. **Spring Boot parent patch bump 3.4.1 → 3.4.13.** Latest 3.4.x patch per
+   Maven Central metadata; same-minor compatible (no API churn), pulls the
+   bundled Spring Framework 6.2.x patches. `versions:display-parent-updates`
+   suggested 4.2.0-M2 — rejected as a milestone major (incompatible);
+   only the 3.4 line was considered.
+2. **Consciously skipped (documented):** `jjwt.version` 0.12.6 → 0.13.0
+   (no CVE against 0.12.6; avoids dependency churn for no security gain);
+   `springdoc.version` 2.7.0 → 3.1.1 (3.x targets Boot 3.5+, incompatible
+   with the 3.4 line — revisit together with the next Boot minor upgrade).
+3. **Frontend dependency audit:** `npm audit --omit=dev` — **0
+   vulnerabilities**. No action needed.
+4. **Regression guards (Phase 11):** new `InputValidationTest` (6 tests) pins
+   DTO validator behavior for type/format (email), length (name
+   over 150 chars fails create and no-op patch passes), range (negative
+   credit_limit / purchase_price / tax_rate / header-and-line sale discount /
+   expense amount on update / payment reference over 100 chars) and enum
+   (status). New `UploadSurfaceGuardTest` scans `src/main/java` for any
+   upload sink (`MultipartFile`, `@RequestPart`, `FileWriter`,
+   `FileOutputStream`) and fails with the `application.yml` upload checklist
+   if one appears — the "no upload endpoints" invariant from 2026-09-28 is
+   now enforced mechanically in CI instead of only documented.
+
+Test-authoring note: the sale header-discount case initially tripped the
+`items must not be empty.` create-guard (validator ordering) — fixed by
+supplying a valid item line to isolate the discount failure.
+
+Verification (real runs 2026-10-20): `mvn -B verify` exit 0 on Boot 3.4.13 —
+**39 tests, 0 failures/errors/skipped** (31 pre-existing + 8 new: 6
+`InputValidationTest` + 1 `UploadSurfaceGuardTest` + 1 earlier service-test
+addition, counted per surefire XML `tests=` attributes), JaCoCo instruction
+coverage 74% / branch 48% (gate 60%). `npm audit --omit=dev`: 0
+vulnerabilities.
 
 ## 4. Verification log (real runs, not estimates)
 
@@ -78,6 +154,10 @@ every fix verified by a real run (no invented results).
   warning unchanged).
 - `vercel.json` JSON-parse check: OK. `docker-compose.prod.yml` config check:
   valid (earlier pass).
+- 2026-10-20 pass 2: `mvn -B verify` (backend-java on Boot 3.4.13): **Tests
+  run: 39, Failures: 0, Errors: 0, Skipped: 0 — BUILD SUCCESS**, JaCoCo
+  instruction 74% / branch 48% (gate 60%). `npm audit --omit=dev`
+  (frontend): **0 vulnerabilities**.
 
 ## 5. Secrets sweep + continuous scanning (2026-09-28)
 
@@ -98,6 +178,9 @@ Secret values are never reproduced in reports.
 
 After this pass: no boot-with-known-secret, no public API docs in prod,
 hardened transport headers on all four layers, CORS fail-closed, logout
-usable, refresh replay contained. Remaining material risks are §3 items 1–4
+usable, refresh replay contained. Dependency posture as of 2026-10-20 is
+patch-current on the Boot 3.4 line with audit-clean frontend deps; skipped
+upgrades and their rationale are recorded in §7 pass 2. Remaining material
+risks are §3 items 1–4
 (membership model, edge throttling, secret rotation in deployed envs, token
 storage strategy) — all require owner decisions/actions beyond safe automation.

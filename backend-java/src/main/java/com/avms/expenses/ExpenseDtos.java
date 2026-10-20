@@ -1,5 +1,6 @@
 package com.avms.expenses;
 
+import com.avms.common.Validators;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -20,6 +21,9 @@ public class ExpenseDtos {
       if (create && expenseDate == null) {
         throw new IllegalArgumentException("expense_date is required.");
       }
+      Validators.nonNegative(amount, "amount");
+      Validators.text(paymentMethod, "payment_method", 20);
+      Validators.text(description, "description", 255);
     }
   }
 

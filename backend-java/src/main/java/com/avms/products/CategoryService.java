@@ -61,6 +61,7 @@ public class CategoryService {
 
   @Transactional
   public ProductsDtos.CategoryResponse update(Long id, ProductsDtos.CategoryRequest req) {
+    req.validate(false);
     Category category = findScoped(id);
     if (req.categoryName() != null && !req.categoryName().trim().equalsIgnoreCase(category.getCategoryName())
         && categories.existsByVentureIdAndCategoryName(category.getVenture().getId(), req.categoryName().trim())) {

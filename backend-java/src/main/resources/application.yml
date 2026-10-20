@@ -1,6 +1,12 @@
 spring:
   application:
     name: avms-backend
+  autoconfigure:
+    # Auth is fully custom (JWT filter + method security); the default
+    # in-memory UserDetailsService only exists to print an auto-generated
+    # console credential at startup — disable it entirely.
+    exclude:
+      org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   data:
     web:
       pageable:
@@ -51,6 +57,11 @@ server:
 avms:
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:5173}
+  auth:
+    # Dev convenience only: include the reset URL in the forgot-password
+    # response (no mail server locally). Never enable in prod; tokens are
+    # delivered by email in real deployments.
+    expose-reset-link: ${EXPOSE_RESET_LINK:false}
   jwt:
     secret: ${JWT_SECRET:change-me-to-a-256-bit-secret-please-change-me-123456}
     access-minutes: ${JWT_ACCESS_MINUTES:30}
@@ -59,6 +70,7 @@ avms:
     enabled: ${RATE_LIMIT_ENABLED:true}
     login-max: ${RATE_LIMIT_LOGIN_MAX:20}
     refresh-max: ${RATE_LIMIT_REFRESH_MAX:60}
+    mutate-max: ${RATE_LIMIT_MUTATE_MAX:120}
     default-max: ${RATE_LIMIT_DEFAULT_MAX:600}
     window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
 

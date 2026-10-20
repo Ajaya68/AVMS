@@ -1,5 +1,6 @@
 package com.avms.sales;
 
+import com.avms.common.Validators;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -21,6 +22,17 @@ public class SaleDtos {
       }
       if (create && (items == null || items.isEmpty())) {
         throw new IllegalArgumentException("items must not be empty.");
+      }
+      Validators.nonNegative(discount, "discount");
+      Validators.nonNegative(tax, "tax");
+      Validators.text(notes, "notes", 255);
+      if (items != null) {
+        for (SaleItemRequest line : items) {
+          Validators.nonNegative(line.quantity(), "quantity");
+          Validators.nonNegative(line.unitPrice(), "unit_price");
+          Validators.nonNegative(line.discount(), "discount");
+          Validators.nonNegative(line.tax(), "tax");
+        }
       }
     }
   }
@@ -48,6 +60,7 @@ public class SaleDtos {
       if (items == null || items.isEmpty()) {
         throw new IllegalArgumentException("items must not be empty.");
       }
+      Validators.text(notes, "notes", 255);
     }
   }
 
