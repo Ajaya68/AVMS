@@ -146,7 +146,21 @@ addition, counted per surefire XML `tests=` attributes), JaCoCo instruction
 coverage 74% / branch 48% (gate 60%). `npm audit --omit=dev`: 0
 vulnerabilities.
 
-## 4. Verification log (real runs, not estimates)
+### Pass 4 (2026-10-20): OTP-based password reset
+
+The reset flow now issues a **6-digit OTP** (SecureRandom digits, 10-minute
+TTL, single use) instead of a URL token: `forgot-password` stores only the
+SHA-256 hash (same `PASSWORD_RESET_TOKEN` table) and **prints the OTP on the
+server console** — the delivery channel by design (self-hosted, no mail
+relay); dev additionally echoes it in the response and the SPA's reset page
+takes `email + otp + new password`. Verification: wrong OTP → generic 400;
+correct OTP → password swap + all refresh sessions revoked; old password
+rejected, new one logs in (live API run); H2 suite 39/39 green including
+updated reset/enumeration/expiry tests; frontend lint+build green. One
+generic failure message everywhere: "Invalid or expired reset code." — no
+state oracle.
+
+
 
 - `mvn -B verify` (backend-java, H2 suite): **Tests run: 20, Failures: 0,
   Errors: 0, Skipped: 0 — BUILD SUCCESS, JaCoCo checks met** (01:03 min).

@@ -35,10 +35,10 @@ export async function requestPasswordReset(email) {
   return api.post("/auth/forgot-password/", { email });
 }
 
-export async function resetPassword(uidb64, token, newPassword) {
+export async function resetPassword(email, otp, newPassword) {
   return api.post("/auth/reset-password/", {
-    uidb64,
-    token,
+    email,
+    otp,
     new_password: newPassword,
   });
 }

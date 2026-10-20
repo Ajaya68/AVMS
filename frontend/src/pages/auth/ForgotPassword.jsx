@@ -8,7 +8,7 @@ function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-  const [devLink, setDevLink] = useState("");
+  const [devOtp, setDevOtp] = useState("");
   const [error, setError] = useState("");
 
   const handleSubmit = async (event) => {
@@ -18,10 +18,10 @@ function ForgotPassword() {
     try {
       const data = await requestPasswordReset(email);
       setDone(true);
-      // In DEBUG mode the backend returns a usable reset link so the flow
-      // is demonstrable without an SMTP relay. Production emails it instead.
-      if (data?.reset_url) {
-        setDevLink(data.reset_url);
+      // In dev the backend echoes the OTP in the response so the flow is
+      // demonstrable without a mail relay; production shows only the console.
+      if (data?.otp) {
+        setDevOtp(data.otp);
       }
     } catch (err) {
       setError(
@@ -41,7 +41,7 @@ function ForgotPassword() {
             <div>
               <h4 className="mb-0">Reset password</h4>
               <small className="text-muted">
-                We will send you a link to reset your password
+                We will issue a one-time code (OTP) to reset your password
               </small>
             </div>
           </div>
@@ -54,8 +54,9 @@ function ForgotPassword() {
 
           {done ? (
             <Alert variant="success" className="mb-3">
-              If an account exists for that email, a password reset link has
-              been sent.
+              If an account exists for that email, a one-time reset code has
+              been issued. It is valid for 10 minutes and printed on the
+              server console.
             </Alert>
           ) : (
             <Form onSubmit={handleSubmit}>
@@ -75,18 +76,21 @@ function ForgotPassword() {
                 className="btn btn-primary w-100"
                 disabled={submitting}
               >
-                {submitting ? "Sending..." : "Send reset link"}
+                {submitting ? "Sending..." : "Send me a one-time code"}
               </button>
             </Form>
           )}
 
-          {devLink && (
+          {devOtp && (
             <div className="mt-3 small text-muted border rounded p-2">
               <div className="mb-1">
                 <i className="bi bi-info-circle me-1" />
-                Development build: your reset link is
+                Development build: your one-time code is{" "}
+                <span className="fw-bold">{devOtp}</span>
               </div>
-              <Link to={new URL(devLink).pathname + new URL(devLink).search}>
+              <Link
+                to={`/reset-password?email=${encodeURIComponent(email)}`}
+              >
                 Continue to reset password
               </Link>
             </div>

@@ -15,7 +15,8 @@ public class AuthDtos {
 
   public record ForgotPasswordRequest(@NotBlank @Email String email) {}
 
-  public record ResetPasswordRequest(@NotBlank String uidb64, @NotBlank String token, @NotBlank @Size(min = 8) String newPassword) {}
+  public record ResetPasswordRequest(@NotBlank @Email String email, @NotBlank String otp,
+      @NotBlank @Size(min = 8) String newPassword) {}
 
   public record ChangePasswordRequest(@NotBlank String currentPassword, @NotBlank @Size(min = 8) String newPassword) {}
 

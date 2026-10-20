@@ -29,6 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuthService {
 
+  private static final org.slf4j.Logger log =
+      org.slf4j.LoggerFactory.getLogger(AuthService.class);
+
   /** Refresh-token lifetime cap for the whole reset-change-rotation chain. */
   static final long RESET_TOKEN_MINUTES = 30;
   static final String GENERIC_RESET_MESSAGE = "If an account exists for that email, reset instructions have been issued.";
@@ -36,6 +39,10 @@ public class AuthService {
   /** 2^232+ random value, hashed before storage; raw form never persisted. */
   private static final int RESET_TOKEN_BYTES = 32;
   private static final SecureRandom RANDOM = new SecureRandom();
+  /** OTP: 6 digits, 10-minute lifetime, single use. Console delivery is the
+   *  deliberate local-recovery channel — no mail server exists. */
+  private static final int OTP_DIGITS = 6;
+  private static final int OTP_TTL_MINUTES = 10;
   /** Never matched against a real account; equalizes BCrypt work for unknown
    *  emails so response timing cannot reveal whether an email exists. */
   private static final String DUMMY_BCRYPT_HASH =
@@ -163,9 +170,10 @@ public class AuthService {
   }
 
   /**
-   * Issues a single-use, 30-minute, hashed reset token. Response is always
-   * generic to prevent user enumeration; a visible reset URL is included ONLY
-   * when expose-reset-link is enabled (dev), because there is no mail server.
+   * Issues a single-use 6-digit OTP (10-minute lifetime), SHA-256-hashed in
+   * storage. Delivered on the server console (no mail server exists) and, in
+   * dev only, echoed in the response. Responses are always generic to prevent
+   * user enumeration.
    */
   @Transactional
   public Map<String, Object> requestPasswordReset(String email, boolean allowLink) {
@@ -177,26 +185,33 @@ public class AuthService {
     String normalized = email == null ? "" : email.trim();
     AccountsUser user = users.findByEmailIgnoreCase(normalized).orElse(null);
     if (user != null && Boolean.TRUE.equals(user.getIsActive())) {
-      // One outstanding token per email: purge expired/used predecessors first.
+      // One outstanding credential per email: purge expired/used predecessors.
       resetTokens.deleteByUserEmailIgnoreCase(user.getEmail());
-      String rawToken = newToken();
-      resetTokens.save(new PasswordResetToken(user.getEmail(), hashToken(rawToken),
-          Instant.now().plusSeconds(RESET_TOKEN_MINUTES * 60)));
+      String otp = newOtp();
+      resetTokens.save(new PasswordResetToken(user.getEmail(), hashToken(otp),
+          Instant.now().plusSeconds(OTP_TTL_MINUTES * 60)));
+      // Delivery channel: server console always takes it (local recovery); dev
+      // additionally echoes the code in the response for convenience.
+      log.info("[forgot-password] Password reset OTP for {}: {} (valid {} min)",
+          user.getEmail(), otp, OTP_TTL_MINUTES);
       if (allowLink) {
+        out.put("otp", otp);
         String uidb64 = Base64.getUrlEncoder().withoutPadding()
             .encodeToString(String.valueOf(user.getId()).getBytes(StandardCharsets.US_ASCII));
-        out.put("reset_url", firstFrontendOrigin + RESET_URL_PATH + "?uidb64=" + uidb64 + "&token=" + rawToken);
+        out.put("reset_url", firstFrontendOrigin + RESET_URL_PATH + "?uidb64=" + uidb64);
       }
       audit.log("PASSWORD_RESET_REQUESTED", "accounts", "User", String.valueOf(user.getId()),
-          "Password reset requested.");
+          "Password reset requested (OTP issued).");
     }
     return out;
   }
 
-  private String newToken() {
-    byte[] bytes = new byte[RESET_TOKEN_BYTES];
-    RANDOM.nextBytes(bytes);
-    return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+  private String newOtp() {
+    StringBuilder sb = new StringBuilder(OTP_DIGITS);
+    for (int i = 0; i < OTP_DIGITS; i++) {
+      sb.append(RANDOM.nextInt(10));
+    }
+    return sb.toString();
   }
 
   private String hashToken(String rawToken) {
@@ -209,34 +224,42 @@ public class AuthService {
     }
   }
 
+  /** Consumes the single-use OTP: verifies the 6-digit code against the
+   *  stored hash, swaps the password, revokes every session and audits.
+   *  Failures return one identical message so account state is never leaked. */
   @Transactional
-  public Map<String, Object> resetPassword(String uidb64, String rawToken, String newPassword) {
-    Long userId;
-    try {
-      userId = Long.parseLong(new String(Base64.getUrlDecoder().decode(uidb64), StandardCharsets.US_ASCII));
-    } catch (Exception e) {
-      throw new IllegalArgumentException("Invalid or expired reset link.");
+  public Map<String, Object> resetPassword(String email, String otp, String newPassword) {
+    String normalized = email == null ? "" : email.trim();
+    String normalizedOtp = otp == null ? "" : otp.trim();
+    if (normalized.isEmpty() || normalizedOtp.length() != OTP_DIGITS
+        || normalizedOtp.chars().anyMatch(c -> c < '0' || c > '9')) {
+      throw new IllegalArgumentException("Invalid or expired reset code.");
     }
-    if (rawToken == null || rawToken.isBlank()) {
-      throw new IllegalArgumentException("Invalid or expired reset link.");
+    PasswordResetToken stored = resetTokens.findByUserEmailIgnoreCase(normalized).stream()
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("Invalid or expired reset code."));
+    boolean valid = MessageDigest.isEqual(
+        hashToken(normalizedOtp).getBytes(StandardCharsets.US_ASCII),
+        stored.getTokenHash().getBytes(StandardCharsets.US_ASCII));
+    if (!valid || stored.isExpired()) {
+      // Wrong code / expired code: one identical rejection. The row stays for
+      // expired-at-request cleanup by the next issuance; deletion on valid use only.
+      if (stored.isExpired()) {
+        resetTokens.delete(stored);
+      }
+      throw new IllegalArgumentException("Invalid or expired reset code.");
     }
-    PasswordResetToken token = resetTokens.findByTokenHash(hashToken(rawToken))
-        .orElseThrow(() -> new IllegalArgumentException("Invalid or expired reset link."));
-    if (token.isExpired()) {
-      resetTokens.delete(token);
-      throw new IllegalArgumentException("Invalid or expired reset link.");
-    }
-    AccountsUser user = users.findById(userId)
-        .filter(u -> u.getEmail().equalsIgnoreCase(token.getUserEmail()))
-        .orElseThrow(() -> new IllegalArgumentException("Invalid or expired reset link."));
+    AccountsUser user = users.findByEmailIgnoreCase(normalized)
+        .filter(u -> u.getEmail().equalsIgnoreCase(stored.getUserEmail()))
+        .orElseThrow(() -> new IllegalArgumentException("Invalid or expired reset code."));
     user.setPassword(encoder.encode(newPassword));
     users.save(user);
-    resetTokens.delete(token);
+    resetTokens.delete(stored);
     // Any session using old credentials dies immediately.
     refreshTokens.findByUserEmailIgnoreCase(user.getEmail())
         .forEach(t -> t.setRevoked(true));
     audit.log("PASSWORD_RESET", "accounts", "User", String.valueOf(user.getId()),
-        "Password reset completed via reset link.");
+        "Password reset completed via OTP.");
     return Map.of("detail", "Password has been reset. You can now sign in with the new password.");
   }
 

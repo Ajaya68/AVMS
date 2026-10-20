@@ -60,7 +60,7 @@ public class AuthController {
   @PostMapping("/reset-password")
   public ResponseEntity<ApiResponse<Map<String, Object>>> resetPassword(
       @Valid @RequestBody AuthDtos.ResetPasswordRequest req) {
-    return ResponseEntity.ok(ApiResponse.ok(auth.resetPassword(req.uidb64(), req.token(), req.newPassword())));
+    return ResponseEntity.ok(ApiResponse.ok(auth.resetPassword(req.email(), req.otp(), req.newPassword())));
   }
 
   @GetMapping("/me")

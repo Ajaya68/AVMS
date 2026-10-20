@@ -94,18 +94,18 @@ class AuthControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.detail").exists())
-        .andExpect(jsonPath("$.data.reset_url").doesNotExist());
+        .andExpect(jsonPath("$.data.otp").doesNotExist());
 
     // Reset with garbage params: fixed generic 400, no internals echoed
     mvc.perform(post("/api/auth/reset-password").contentType(MediaType.APPLICATION_JSON)
-            .content("{\"uidb64\":\"bad!!\",\"token\":\"zzz\",\"new_password\":\"whatever@123\"}"))
+            .content("{\"email\":\"who@x.y\",\"otp\":\"abc\",\"new_password\":\"whatever@123\"}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.success").value(false))
-        .andExpect(jsonPath("$.message").value("Invalid or expired reset link."));
+        .andExpect(jsonPath("$.message").value("Invalid or expired reset code."));
 
     // Missing/short new password fails validation (generic envelope)
     mvc.perform(post("/api/auth/reset-password").contentType(MediaType.APPLICATION_JSON)
-            .content("{\"uidb64\":\"MQ\",\"token\":\"zzz\",\"new_password\":\"short\"}"))
+            .content("{\"email\":\"who@x.y\",\"otp\":\"123456\",\"new_password\":\"short\"}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.success").value(false));
   }

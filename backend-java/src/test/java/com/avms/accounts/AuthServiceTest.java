@@ -67,17 +67,18 @@ import java.util.Set;
   }
 
   @Test
-  void forgotPasswordAlwaysGenericAndLinksTokenMatchesRow() {
+  void forgotPasswordAlwaysGenericAndDevEchoesOtp() {
     Map<String, Object> unknown = auth.requestPasswordReset("nobody@avms.local", false);
-    assertThat(unknown).containsKeys("detail").doesNotContainKey("reset_url");
+    assertThat(unknown).containsKeys("detail").doesNotContainKey("otp");
 
     Map<String, Object> known = auth.requestPasswordReset("staff@avms.local", false);
-    assertThat(known).containsKeys("detail").doesNotContainKey("reset_url");
+    assertThat(known).containsKeys("detail").doesNotContainKey("otp");
 
-    // dev-link mode returns a URL whose uidb64/token pair resolves to the stored hash
-    Map<String, Object> link = auth.requestPasswordReset("staff@avms.local", true);
-    assertThat(link).containsKey("reset_url");
-    assertThat(String.valueOf(link.get("reset_url"))).contains("/reset-password?uidb64=");
+    // dev mode echoes the syntactically valid OTP and resolves to the stored hash
+    Map<String, Object> dev = auth.requestPasswordReset("staff@avms.local", true);
+    assertThat(dev).containsKey("otp");
+    String otp = String.valueOf(dev.get("otp"));
+    assertThat(otp).hasSize(6).matches("\\d{6}");
   }
 
   @Test
@@ -85,18 +86,16 @@ import java.util.Set;
     Map<String, Object> login = auth.login("staff@avms.local", "Staff@12345");
     String oldRefresh = (String) login.get("refresh");
 
-    String url = (String) auth.requestPasswordReset("staff@avms.local", true).get("reset_url");
-    String uidb64 = url.substring(url.indexOf("uidb64=") + "uidb64=".length(), url.indexOf("&token="));
-    String token = url.substring(url.indexOf("&token=") + "&token=".length());
+    String otp = String.valueOf(auth.requestPasswordReset("staff@avms.local", true).get("otp"));
 
     // Garbage inputs fail with the same generic message (no oracle on which part failed)
-    assertThatThrownBy(() -> auth.resetPassword("garbage!!", token, "NewPass@12345"))
+    assertThatThrownBy(() -> auth.resetPassword("garbage!!", otp, "NewPass@12345"))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Invalid or expired reset link.");
-    assertThatThrownBy(() -> auth.resetPassword(uidb64, "wrong-token", "NewPass@12345"))
+        .hasMessage("Invalid or expired reset code.");
+    assertThatThrownBy(() -> auth.resetPassword("staff@avms.local", "000000", "NewPass@12345"))
         .isInstanceOf(IllegalArgumentException.class);
 
-    Map<String, Object> done = auth.resetPassword(uidb64, token, "NewPass@12345");
+    Map<String, Object> done = auth.resetPassword("staff@avms.local", otp, "NewPass@12345");
     assertThat(done).containsKeys("detail");
     assertThat(encoder.matches("NewPass@12345",
         users.findByEmailIgnoreCase("staff@avms.local").orElseThrow().getPassword())).isTrue();
@@ -104,24 +103,22 @@ import java.util.Set;
     // Reset revokes previously issued sessions
     assertThatThrownBy(() -> auth.refresh(oldRefresh)).isInstanceOf(Exception.class);
 
-    // Single use: replaying the link fails even with the correct token
-    assertThatThrownBy(() -> auth.resetPassword(uidb64, token, "Another@12345"))
+    // Single use: replaying the OTP fails even with the correct code
+    assertThatThrownBy(() -> auth.resetPassword("staff@avms.local", otp, "Another@12345"))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   void expiredResetTokensAreRejectedAndPurged() {
     auth.requestPasswordReset("", false);
-    String url = (String) auth.requestPasswordReset("staff@avms.local", true).get("reset_url");
-    String uidb64 = url.substring(url.indexOf("uidb64=") + "uidb64=".length(), url.indexOf("&token="));
-    String token = url.substring(url.indexOf("&token=") + "&token=".length());
+    String otp = String.valueOf(auth.requestPasswordReset("staff@avms.local", true).get("otp"));
 
     resetTokens.findAll().forEach(t -> t.setExpiresAt(java.time.Instant.now().minusSeconds(60)));
     resetTokens.saveAll(resetTokens.findAll());
 
-    assertThatThrownBy(() -> auth.resetPassword(uidb64, token, "NewPass@12345"))
+    assertThatThrownBy(() -> auth.resetPassword("staff@avms.local", otp, "NewPass@12345"))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Invalid or expired reset link.");
+        .hasMessage("Invalid or expired reset code.");
     // Expired row consumed and removed; fresh requests start clean
     assertThat(resetTokens.findByUserEmailIgnoreCase("staff@avms.local")).isEmpty();
   }
